@@ -711,18 +711,19 @@ Default settings location:
 
 ### Security Badges Status
 
-| Security Check | Status | Description |
-|----------------|--------|-------------|
-| **CodeQL Analysis** | [![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml) | GitHub's semantic code analysis |
-| **Security Audit** | [![Security Audit](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml) | Automated dependency vulnerability scanning |
-| **Snyk Monitoring** | [![Known Vulnerabilities](https://snyk.io/test/github/Lukeus/app-shell/badge.svg)](https://snyk.io/test/github/Lukeus/app-shell) | Real-time vulnerability monitoring |
-| **License Compliance** | [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell?ref=badge_shield) | Open source license compliance |
+| Security Check         | Status                                                                                                                                                                                             | Description                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **CodeQL Analysis**    | [![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml)                                                      | GitHub's semantic code analysis             |
+| **Security Audit**     | [![Security Audit](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml)                                          | Automated dependency vulnerability scanning |
+| **Snyk Monitoring**    | [![Known Vulnerabilities](https://snyk.io/test/github/Lukeus/app-shell/badge.svg)](https://snyk.io/test/github/Lukeus/app-shell)                                                                   | Real-time vulnerability monitoring          |
+| **License Compliance** | [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell?ref=badge_shield) | Open source license compliance              |
 
 ### Electron Security Best Practices
 
 App Shell implements comprehensive Electron security measures:
 
 #### ✅ **Core Security Features**
+
 - **Context Isolation**: ✅ Enabled - Prevents access between main world and isolated world
 - **Node.js Integration**: ❌ Disabled in renderers - No direct Node.js access from UI
 - **Remote Module**: ❌ Disabled - No remote module usage
@@ -731,18 +732,21 @@ App Shell implements comprehensive Electron security measures:
 - **Sandboxed Renderers**: ✅ Enabled - Renderer processes run in sandbox mode
 
 #### 🛡️ **IPC Security**
+
 - **Secure Channels**: All IPC communication uses predefined, validated channels
 - **Input Validation**: All IPC messages are type-checked and validated
 - **No Arbitrary Code**: Extension system prevents arbitrary code execution
 - **Permission Model**: Extensions require explicit permissions for sensitive operations
 
 #### 🔐 **Extension Security**
+
 - **Manifest Validation**: All extensions must have valid manifests
 - **Code Signing**: Extensions are verified before loading
 - **Sandbox Isolation**: Extensions run in isolated contexts
 - **API Restrictions**: Limited API surface exposed to extensions
 
 #### 📊 **Security Monitoring**
+
 - **Automated Scans**: Daily security audits via GitHub Actions
 - **Dependency Checks**: Automated vulnerability scanning with Snyk
 - **Code Analysis**: Static analysis with CodeQL

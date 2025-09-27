@@ -3,6 +3,7 @@
 ## 📋 Mandatory Pre-Commit Checks
 
 ### 1. **Prettier Formatting** (Required)
+
 ```bash
 # MUST pass before any commit
 pnpm run format:check
@@ -12,8 +13,9 @@ pnpm run format
 ```
 
 ### 2. **ESLint Code Quality** (Required)
+
 ```bash
-# MUST pass before any commit  
+# MUST pass before any commit
 pnpm run lint
 
 # Auto-fix linting issues where possible
@@ -21,6 +23,7 @@ pnpm run lint:fix
 ```
 
 ### 3. **TypeScript Compilation** (Required)
+
 ```bash
 # MUST compile without errors
 pnpm run build
@@ -36,13 +39,14 @@ npx husky install
 
 # This will automatically run on every commit:
 # 1. Prettier formatting check
-# 2. ESLint code quality check  
+# 2. ESLint code quality check
 # 3. TypeScript compilation check
 ```
 
 ## 🔒 Repository Protection Rules
 
 ### Branch Protection Settings:
+
 - **Require pull request reviews**: ✅ Enabled
 - **Require status checks**: ✅ Enabled
   - `Lint & Format Check` - Must pass
@@ -52,6 +56,7 @@ npx husky install
 - **Restrict pushes that create files**: ✅ Enabled
 
 ### Status Check Requirements:
+
 1. **✅ Formatting**: `pnpm run format:check` must pass
 2. **✅ Linting**: `pnpm run lint` must pass (warnings allowed)
 3. **✅ Build**: All webpack builds must compile successfully
@@ -61,23 +66,27 @@ npx husky install
 ## 📝 File-Specific Rules
 
 ### Workflow Files (`.github/workflows/*.yml`)
+
 - **MUST** be formatted with Prettier
 - **MUST** use explicit `shell:` specifications for cross-platform compatibility
 - **MUST** handle Windows PowerShell vs bash differences
 
 ### Code Files (`src/**/*.ts`, `src/**/*.tsx`)
+
 - **MUST** pass TypeScript strict mode compilation
 - **MUST** be formatted with Prettier
 - **MUST** pass ESLint checks
 - **SHOULD** have JSDoc comments for public APIs
 
 ### Configuration Files (`*.json`, `*.yml`, `*.md`)
+
 - **MUST** be formatted with Prettier
 - **MUST** use consistent indentation (2 spaces)
 
 ## 🛠️ Developer Workflow
 
 ### Before Every Commit:
+
 ```bash
 # 1. Format code
 pnpm run format
@@ -90,10 +99,11 @@ pnpm run format:check && pnpm run lint && pnpm run build
 ```
 
 ### Before Creating PR:
+
 ```bash
 # Run full test suite
 pnpm run format:check
-pnpm run lint  
+pnpm run lint
 pnpm run build
 pnpm audit
 
@@ -103,11 +113,13 @@ pnpm audit
 ## 🚨 Enforcement
 
 ### Automated Enforcement:
+
 - **GitHub Actions**: All PRs must pass formatting and linting checks
 - **Pre-commit hooks**: Prevent commits with formatting/linting issues
 - **Branch protection**: Prevent merging PRs that don't pass checks
 
 ### Manual Review Requirements:
+
 - All PRs require at least 1 approval
 - Reviewers should verify code quality beyond automated checks
 - Large architectural changes require additional review
@@ -115,6 +127,7 @@ pnpm audit
 ## 💡 IDE Setup Recommendations
 
 ### VS Code Settings (`.vscode/settings.json`):
+
 ```json
 {
   "editor.formatOnSave": true,
@@ -126,6 +139,7 @@ pnpm audit
 ```
 
 ### Extensions:
+
 - **Prettier - Code formatter**: Auto-formatting
 - **ESLint**: Real-time linting
 - **TypeScript Importer**: Auto-imports
@@ -143,7 +157,7 @@ pnpm audit
 ## 🔧 Implementation Status
 
 - ✅ **Prettier Configuration**: `.prettierrc` configured
-- ✅ **ESLint Configuration**: `eslint.config.mjs` configured  
+- ✅ **ESLint Configuration**: `eslint.config.mjs` configured
 - ✅ **Pre-commit Hooks**: `husky` and `lint-staged` configured
 - ✅ **GitHub Actions**: CI checks implemented
 - ✅ **Branch Protection**: Repository rules enabled
