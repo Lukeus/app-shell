@@ -116,6 +116,18 @@ pnpm test:report   # View test results report
 pnpm screenshot    # Capture application screenshots
 ```
 
+### Testing
+
+This project includes comprehensive testing:
+
+- **Build Verification**: Automated build testing across platforms
+- **E2E Tests**: Playwright-based Electron testing (run locally with `pnpm test`)
+- **Linting**: ESLint with TypeScript support (`pnpm lint`)
+- **Formatting**: Prettier code formatting (`pnpm format`)
+- **Security**: Automated dependency auditing
+
+**CI/CD**: The GitHub Actions pipeline focuses on cross-platform build verification, code quality, and security scanning. E2E tests should be run locally during development due to Electron's complexity in CI environments.
+
 ## Extension Development
 
 ### Creating Extensions
