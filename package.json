@@ -1,0 +1,193 @@
+{
+  "name": "app-shell",
+  "productName": "App Shell",
+  "version": "1.0.0",
+  "description": "An enterprise-grade, cross-platform Electron app shell with extension support",
+  "main": "./dist/main/main.js",
+  "homepage": "https://github.com/your-org/app-shell",
+  "scripts": {
+    "build": "pnpm run build:main && pnpm run build:renderer && pnpm run build:preload",
+    "build:main": "cross-env NODE_ENV=production webpack --config webpack.main.config.js",
+    "build:renderer": "cross-env NODE_ENV=production webpack --config webpack.renderer.config.js",
+    "build:preload": "cross-env NODE_ENV=production webpack --config webpack.preload.config.js",
+    "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir .",
+    "lint": "cross-env NODE_ENV=development eslint . --cache",
+    "lint:fix": "pnpm run lint -- --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "package": "pnpm run build && electron-builder",
+    "package:dir": "pnpm run build && electron-builder --dir",
+    "package:win": "pnpm run build && electron-builder --win",
+    "package:mac": "pnpm run build && electron-builder --mac",
+    "package:linux": "pnpm run build && electron-builder --linux",
+    "package:all": "pnpm run build && electron-builder --win --mac --linux",
+    "postinstall": "pnpm run rebuild",
+    "dev": "pnpm run build && concurrently \"pnpm run start:renderer\" \"wait-on http://localhost:4000 && cross-env NODE_ENV=development electron ./dist/main/main.js\"",
+    "start:main": "cross-env NODE_ENV=development electron ./dist/main/main.js",
+    "start:renderer": "cross-env NODE_ENV=development webpack serve --config webpack.renderer.config.js",
+    "start:prod": "cross-env NODE_ENV=production electron ./dist/main/main.js",
+    "dev-quick": "pnpm build && cross-env NODE_ENV=development electron ./dist/main/main.js",
+    "quick-start": "pnpm build:preload && concurrently \"pnpm run start:renderer\" \"wait-on http://localhost:4000 && cross-env NODE_ENV=development electron ./dist/main/main.js\"",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "screenshot": "pnpm run build && ts-node scripts/capture-screenshot.ts"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "cross-env NODE_ENV=development eslint --cache"
+    ],
+    "*.json,.{eslintrc,prettierrc}": [
+      "prettier --ignore-path .eslintignore --parser json --write"
+    ],
+    "*.{css,scss}": [
+      "prettier --ignore-path .eslintignore --single-quote --write"
+    ],
+    "*.{html,md,yml}": [
+      "prettier --ignore-path .eslintignore --single-quote --write"
+    ]
+  },
+  "build": {
+    "productName": "App Shell",
+    "appId": "com.yourorg.app-shell",
+    "asar": true,
+    "asarUnpack": "**\\*.{node,dll}",
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": {
+        "target": "default",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      },
+      "type": "distribution",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "snap",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "directories": {
+      "output": "release/build",
+      "buildResources": "assets"
+    },
+    "extraResources": [
+      "./assets/**"
+    ]
+  },
+  "keywords": [
+    "electron",
+    "app-shell",
+    "cross-platform",
+    "extensions",
+    "typescript"
+  ],
+  "author": {
+    "name": "Your Organization",
+    "email": "contact@yourorg.com",
+    "url": "https://github.com/your-org"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-org/app-shell/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/app-shell.git"
+  },
+  "engines": {
+    "node": ">=16.15.0",
+    "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@playwright/test": "^1.55.1",
+    "@types/node": "^24.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/parser": "^8.44.1",
+    "concurrently": "^9.2.1",
+    "copy-webpack-plugin": "^13.0.1",
+    "cross-env": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9",
+    "eslint": "^9.36.0",
+    "html-webpack-plugin": "^5.6.4",
+    "playwright": "^1.55.1",
+    "prettier": "^3.6.2",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "wait-on": "^9.0.1",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "node-pty": "^1.0.0"
+  }
+}

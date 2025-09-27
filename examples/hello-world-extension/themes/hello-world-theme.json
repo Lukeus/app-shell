@@ -1,0 +1,74 @@
+{
+  "id": "hello-world-theme",
+  "name": "Hello World Theme",
+  "type": "dark",
+  "colors": {
+    "app.background": "#1a1a2e",
+    "app.foreground": "#eee6e6",
+    "app.border": "#16213e",
+    "panel.background": "#16213e",
+    "panel.foreground": "#eee6e6",
+    "panel.border": "#0f3460",
+    "button.background": "#e94560",
+    "button.foreground": "#ffffff",
+    "button.hoverBackground": "#c73650",
+    "input.background": "#0f3460",
+    "input.foreground": "#eee6e6",
+    "input.border": "#e94560",
+    "input.focusBorder": "#ff6b85",
+    "terminal.background": "#1a1a2e",
+    "terminal.foreground": "#eee6e6",
+    "terminal.cursor": "#e94560",
+    "terminal.selection": "#0f3460",
+    "activityBar.background": "#16213e",
+    "activityBar.foreground": "#eee6e6",
+    "activityBar.border": "#0f3460",
+    "statusBar.background": "#0f3460",
+    "statusBar.foreground": "#eee6e6",
+    "statusBar.border": "#e94560",
+    "editor.background": "#1a1a2e",
+    "editor.foreground": "#eee6e6",
+    "editor.lineHighlightBackground": "#16213e",
+    "editor.selection": "#0f3460",
+    "sideBar.background": "#16213e",
+    "sideBar.foreground": "#eee6e6",
+    "sideBar.border": "#0f3460",
+    "tab.activeBackground": "#1a1a2e",
+    "tab.activeForeground": "#eee6e6",
+    "tab.inactiveBackground": "#16213e",
+    "tab.inactiveForeground": "#a0a0a0",
+    "tab.border": "#0f3460"
+  },
+  "tokenColors": [
+    {
+      "name": "Comment",
+      "scope": ["comment", "punctuation.definition.comment"],
+      "settings": {
+        "foreground": "#6a737d",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "name": "String",
+      "scope": ["string", "punctuation.definition.string"],
+      "settings": {
+        "foreground": "#e94560"
+      }
+    },
+    {
+      "name": "Keyword",
+      "scope": ["keyword", "storage.type", "storage.modifier"],
+      "settings": {
+        "foreground": "#ff6b85",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Function name",
+      "scope": ["entity.name.function", "meta.function-call"],
+      "settings": {
+        "foreground": "#79c0ff"
+      }
+    }
+  ]
+}
