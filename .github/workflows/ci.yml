@@ -302,15 +302,15 @@ jobs:
         run: |
           # Wait a moment for tag to be available
           sleep 10
-          
+
           # Get the latest tag
           git fetch --tags
           LATEST_TAG=$(git describe --tags --abbrev=0)
           VERSION=${LATEST_TAG#v}
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-      
+
       - name: Get version from Linux job (Windows)
         if: matrix.platform == 'windows'
         id: get-version-win
@@ -318,12 +318,12 @@ jobs:
         run: |
           # Wait a moment for tag to be available
           Start-Sleep -Seconds 10
-          
+
           # Get the latest tag
           git fetch --tags
           $LATEST_TAG = git describe --tags --abbrev=0
           $VERSION = $LATEST_TAG -replace '^v', ''
-          
+
           echo "version=$VERSION" >> $env:GITHUB_OUTPUT
           echo "tag=$LATEST_TAG" >> $env:GITHUB_OUTPUT
 
