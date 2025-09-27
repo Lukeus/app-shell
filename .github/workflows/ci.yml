@@ -295,26 +295,44 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-      - name: Get version from Linux job
-        if: matrix.platform != 'linux'
-        id: get-version
+      - name: Get version from Linux job (macOS)
+        if: matrix.platform == 'macos'
+        id: get-version-mac
+        shell: bash
         run: |
           # Wait a moment for tag to be available
           sleep 10
-
+          
           # Get the latest tag
           git fetch --tags
           LATEST_TAG=$(git describe --tags --abbrev=0)
           VERSION=${LATEST_TAG#v}
-
+          
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Get version from Linux job (Windows)
+        if: matrix.platform == 'windows'
+        id: get-version-win
+        shell: pwsh
+        run: |
+          # Wait a moment for tag to be available
+          Start-Sleep -Seconds 10
+          
+          # Get the latest tag
+          git fetch --tags
+          $LATEST_TAG = git describe --tags --abbrev=0
+          $VERSION = $LATEST_TAG -replace '^v', ''
+          
+          echo "version=$VERSION" >> $env:GITHUB_OUTPUT
+          echo "tag=$LATEST_TAG" >> $env:GITHUB_OUTPUT
 
       - name: Build application
         run: pnpm run build
 
       - name: Package application (Linux)
         if: matrix.platform == 'linux'
+        shell: bash
         run: |
           pnpm run package:linux
           echo "📦 Linux packages created:"
@@ -322,15 +340,17 @@ jobs:
 
       - name: Package application (Windows)
         if: matrix.platform == 'windows'
+        shell: pwsh
         run: |
           pnpm run package:win
-          echo "📦 Windows packages created:"
-          dir release/build/
+          Write-Host "📦 Windows packages created:"
+          Get-ChildItem release/build/
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Package application (macOS)
         if: matrix.platform == 'macos'
+        shell: bash
         run: |
           pnpm run package:mac
           echo "📦 macOS packages created:"
@@ -354,7 +374,7 @@ jobs:
         if: matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-packages-${{ steps.get-version.outputs.version }}
+          name: windows-packages-${{ steps.get-version-win.outputs.version }}
           path: |
             release/build/*.exe
             release/build/*.msi
@@ -364,7 +384,7 @@ jobs:
         if: matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: macos-packages-${{ steps.get-version.outputs.version }}
+          name: macos-packages-${{ steps.get-version-mac.outputs.version }}
           path: |
             release/build/*.dmg
             release/build/*.zip
