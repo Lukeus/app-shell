@@ -21,7 +21,7 @@
     "package:mac": "pnpm run build && electron-builder --mac",
     "package:linux": "pnpm run build && electron-builder --linux",
     "package:all": "pnpm run build && electron-builder --win --mac --linux",
-    "postinstall": "pnpm run rebuild",
+    "postinstall": "if [ -z \"$CI\" ]; then pnpm run rebuild || echo 'Native module rebuild failed, using fallback implementations'; else echo 'Skipping native rebuild in CI environment'; fi",
     "dev": "pnpm run build && concurrently \"pnpm run start:renderer\" \"wait-on http://localhost:4000 && cross-env NODE_ENV=development electron ./dist/main/main.js\"",
     "start:main": "cross-env NODE_ENV=development electron ./dist/main/main.js",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config webpack.renderer.config.js",
