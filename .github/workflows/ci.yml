@@ -60,7 +60,22 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libgtk-3-0
+          sudo apt-get install -y \
+            libnss3-dev \
+            libatk-bridge2.0-dev \
+            libdrm2 \
+            libgtk-3-0 \
+            libgbm-dev \
+            libxss1 \
+            libxtst6 \
+            libxrandr2 \
+            libasound2t64 \
+            libpangocairo-1.0-0 \
+            libatk1.0-0 \
+            libcairo-gobject2 \
+            libgtk-3-0 \
+            libgdk-pixbuf2.0-0 \
+            xvfb
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -212,7 +227,22 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libgtk-3-0 libxss1 libgconf-2-4 libxtst6 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo1 libdrm2 libgtk-3-0 libgdk-pixbuf2.0-0
+          sudo apt-get install -y \
+            libnss3-dev \
+            libatk-bridge2.0-dev \
+            libdrm2 \
+            libgtk-3-0 \
+            libgbm-dev \
+            libxss1 \
+            libxtst6 \
+            libxrandr2 \
+            libasound2t64 \
+            libpangocairo-1.0-0 \
+            libatk1.0-0 \
+            libcairo-gobject2 \
+            libgtk-3-0 \
+            libgdk-pixbuf2.0-0 \
+            xvfb
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
