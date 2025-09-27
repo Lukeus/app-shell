@@ -77,20 +77,239 @@
       .main-container {
         flex: 1;
         display: flex;
-        height: calc(100vh - 30px);
+        flex-direction: row;
+        min-height: 0; /* Important for flex children to shrink */
       }
 
+      /* Activity Bar Styles */
+      .activity-bar {
+        width: 48px;
+        background-color: #2c2c2c;
+        border-right: 1px solid #3e3e42;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        z-index: 10;
+      }
+
+      .activity-bar-items {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+      }
+
+      .activity-bar-secondary {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        border-top: 1px solid #3e3e42;
+        padding-top: 8px;
+      }
+
+      .activity-item {
+        position: relative;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #858585;
+        transition: all 0.2s ease;
+        border: none;
+        background: none;
+      }
+
+      .activity-item:hover {
+        color: #ffffff;
+        background-color: #3e3e42;
+      }
+
+      .activity-item.active {
+        color: #ffffff;
+        background-color: #094771;
+      }
+
+      .activity-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #007acc;
+      }
+
+      .activity-icon {
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Sidebar Styles */
       .sidebar {
-        width: 240px;
+        width: 320px;
         background-color: #252526;
-        border-right: 1px solid #2d2d30;
-        padding: 12px;
+        border-right: 1px solid #3e3e42;
+        display: flex;
+        flex-direction: column;
+        transition:
+          width 0.3s ease,
+          margin-left 0.3s ease;
+        position: relative;
+      }
+
+      .sidebar.collapsed {
+        width: 0;
+        margin-left: 0;
+        overflow: hidden;
+      }
+
+      .sidebar-header {
+        height: 35px;
+        background-color: #2d2d30;
+        border-bottom: 1px solid #3e3e42;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        user-select: none;
+      }
+
+      .sidebar-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #cccccc;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .sidebar-actions {
+        display: flex;
+        gap: 4px;
+      }
+
+      .sidebar-action {
+        background: none;
+        border: none;
+        color: #858585;
+        cursor: pointer;
+        padding: 2px;
+        font-size: 12px;
+        transition: color 0.2s ease;
+      }
+
+      .sidebar-action:hover {
+        color: #ffffff;
+      }
+
+      .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .sidebar-view {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px;
+      }
+
+      .view-content {
+        height: 100%;
+      }
+
+      .extensions-section {
+        margin-bottom: 20px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 4px 8px;
+      }
+
+      .section-subtitle {
+        font-size: 11px;
+        font-weight: 600;
+        color: #858585;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+      }
+
+      .section-actions {
+        display: flex;
+        gap: 4px;
+      }
+
+      .action-btn {
+        background: none;
+        border: none;
+        color: #858585;
+        cursor: pointer;
+        padding: 2px 4px;
+        font-size: 12px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+      }
+
+      .action-btn:hover {
+        color: #ffffff;
+        background-color: #3e3e42;
+      }
+
+      .settings-section {
+        margin-bottom: 20px;
+        padding: 8px;
+      }
+
+      .setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .setting-item label {
+        font-size: 12px;
+        color: #cccccc;
+        flex: 1;
+      }
+
+      .setting-item select,
+      .setting-item input {
+        padding: 4px 8px;
+        background-color: #3c3c3c;
+        border: 1px solid #6c6c6c;
+        border-radius: 3px;
+        color: #cccccc;
+        font-size: 11px;
+        width: 120px;
+      }
+
+      .setting-item select:focus,
+      .setting-item input:focus {
+        outline: none;
+        border-color: #007acc;
       }
 
       .content-area {
         flex: 1;
         display: flex;
         flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
       }
 
       .editor-area {
@@ -101,6 +320,8 @@
         justify-content: center;
         color: #808080;
         font-size: 18px;
+        min-height: 0;
+        overflow: hidden;
       }
 
       .bottom-panel {
@@ -108,15 +329,71 @@
         background: #1e1e1e;
         border-top: 1px solid #2d2d30;
         position: relative;
+        transition: height 0.3s ease;
+        min-height: 32px;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        z-index: 5;
       }
 
-      .panel-tabs {
+      .bottom-panel.collapsed {
+        height: 32px !important;
+        min-height: 32px;
+        max-height: 32px;
+      }
+
+      .panel-header {
         height: 32px;
         background: #252526;
         border-bottom: 1px solid #2d2d30;
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      .panel-tabs {
+        display: flex;
+        align-items: center;
         padding: 0 12px;
+        height: 100%;
+      }
+
+      .panel-actions {
+        display: flex;
+        align-items: center;
+        padding-right: 8px;
+      }
+
+      .panel-toggle-btn {
+        background: none;
+        border: none;
+        color: #858585;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+      }
+
+      .panel-toggle-btn:hover {
+        color: #ffffff;
+        background-color: #3e3e42;
+      }
+
+      .toggle-icon {
+        font-size: 12px;
+        transition: transform 0.2s ease;
+      }
+
+      .bottom-panel.collapsed .toggle-icon {
+        transform: rotate(180deg);
       }
 
       .panel-tab {
@@ -144,9 +421,79 @@
       }
 
       .panel-content {
-        height: calc(100% - 32px);
+        flex: 1;
         padding: 8px;
         background: #1e1e1e;
+        overflow: hidden;
+      }
+
+      .bottom-panel.collapsed .panel-content {
+        display: none;
+      }
+
+      .panel-resize-handle {
+        height: 4px;
+        background: transparent;
+        cursor: ns-resize;
+        position: relative;
+        z-index: 10;
+      }
+
+      .panel-resize-handle:hover {
+        background: #007acc;
+      }
+
+      .bottom-panel.collapsed + .panel-resize-handle {
+        display: none;
+      }
+
+      /* Status Bar Styles */
+      .status-bar {
+        height: 22px;
+        background-color: #007acc;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        font-size: 11px;
+        flex-shrink: 0;
+        user-select: none;
+        border-top: 1px solid #005a9e;
+      }
+
+      .status-bar-left,
+      .status-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 3px;
+        transition: background-color 0.2s ease;
+      }
+
+      .status-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .status-icon {
+        font-size: 12px;
+      }
+
+      .status-text {
+        white-space: nowrap;
+      }
+
+      /* Hide empty status items */
+      .status-item:has(.status-text:empty) {
+        display: none;
       }
 
       #terminal {
@@ -195,73 +542,9 @@
       }
     </style>
   </head>
-  <body tabindex="0" style="outline: none">
+  <body tabindex="0" style="outline: none" class="dark">
     <div id="app">
-      <!-- Custom title bar for cross-platform compatibility -->
-      <div class="title-bar">
-        <div class="title-bar-title">App Shell</div>
-        <div class="title-bar-controls">
-          <button class="title-bar-button minimize" id="minimize-btn"></button>
-          <button class="title-bar-button maximize" id="maximize-btn"></button>
-          <button class="title-bar-button close" id="close-btn"></button>
-        </div>
-      </div>
-
-      <!-- Main application container -->
-      <div class="main-container">
-        <!-- Sidebar for extensions and navigation -->
-        <div class="sidebar">
-          <h3 style="margin-bottom: 12px; font-size: 14px; color: #cccccc">Extensions</h3>
-          <div id="extensions-list" class="loading">Loading extensions...</div>
-        </div>
-
-        <!-- Main content area -->
-        <div class="content-area">
-          <!-- Editor/main workspace -->
-          <div class="editor-area" id="editor-area">
-            <div style="text-align: center">
-              <h2 style="margin-bottom: 16px; color: #cccccc">Welcome to App Shell</h2>
-              <p style="margin-bottom: 12px; color: #808080">
-                Your extensible application platform
-              </p>
-              <p style="font-size: 14px; color: #6f6f6f; margin-bottom: 20px">
-                Press
-                <kbd
-                  style="
-                    background-color: #3e3e42;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-family: monospace;
-                  "
-                  >Cmd+Shift+P</kbd
-                >
-                (macOS) or
-                <kbd
-                  style="
-                    background-color: #3e3e42;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-family: monospace;
-                  "
-                  >Ctrl+Shift+P</kbd
-                >
-                (Windows/Linux) to open Command Palette
-              </p>
-            </div>
-          </div>
-
-          <!-- Bottom panel with terminal -->
-          <div class="bottom-panel" id="bottom-panel">
-            <div class="panel-tabs">
-              <button class="panel-tab active" id="terminal-tab">Terminal</button>
-              <button class="panel-tab" id="output-tab">Output</button>
-            </div>
-            <div class="panel-content">
-              <div id="terminal"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- React app will render here -->
     </div>
 
     <!-- Scripts will be injected by webpack -->

@@ -42,6 +42,17 @@ interface ElectronAPI {
   // App control
   quitApp: () => void;
   restartApp: () => void;
+
+  // Marketplace
+  searchMarketplacePlugins: (query: any) => Promise<any>;
+  getMarketplacePlugin: (pluginId: string) => Promise<any>;
+  getMarketplaceCategories: () => Promise<any[]>;
+  installMarketplacePlugin: (pluginId: string, version?: string) => Promise<void>;
+  updateMarketplacePlugin: (pluginId: string) => Promise<void>;
+  uninstallMarketplacePlugin: (pluginId: string) => Promise<void>;
+  getInstalledPlugins: () => Promise<any[]>;
+  checkPluginUpdates: () => Promise<any[]>;
+  getPluginInstallationStatus: (pluginId: string) => Promise<any>;
 }
 
 // Create the API object
@@ -111,6 +122,20 @@ const electronAPI: ElectronAPI = {
   // App control
   quitApp: () => ipcRenderer.invoke('app:quit'),
   restartApp: () => ipcRenderer.invoke('app:restart'),
+
+  // Marketplace
+  searchMarketplacePlugins: (query: any) => ipcRenderer.invoke('marketplace:search', query),
+  getMarketplacePlugin: (pluginId: string) => ipcRenderer.invoke('marketplace:getPlugin', pluginId),
+  getMarketplaceCategories: () => ipcRenderer.invoke('marketplace:getCategories'),
+  installMarketplacePlugin: (pluginId: string, version?: string) =>
+    ipcRenderer.invoke('marketplace:install', pluginId, version),
+  updateMarketplacePlugin: (pluginId: string) => ipcRenderer.invoke('marketplace:update', pluginId),
+  uninstallMarketplacePlugin: (pluginId: string) =>
+    ipcRenderer.invoke('marketplace:uninstall', pluginId),
+  getInstalledPlugins: () => ipcRenderer.invoke('marketplace:getInstalled'),
+  checkPluginUpdates: () => ipcRenderer.invoke('marketplace:checkUpdates'),
+  getPluginInstallationStatus: (pluginId: string) =>
+    ipcRenderer.invoke('marketplace:getInstallationStatus', pluginId),
 };
 
 // Expose the API to the renderer process
