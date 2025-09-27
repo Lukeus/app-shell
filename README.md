@@ -3,7 +3,9 @@
 [![CI](https://github.com/Lukeus/app-shell/workflows/CI/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/ci.yml)
 [![Manual Release](https://github.com/Lukeus/app-shell/workflows/Manual%20Release/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/release.yml)
 [![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml)
-[![Security](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml)
+[![Security Audit](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml)
+[![Known Vulnerabilities](https://snyk.io/test/github/Lukeus/app-shell/badge.svg)](https://snyk.io/test/github/Lukeus/app-shell)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell?ref=badge_shield)
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Lukeus/app-shell?sort=semver&logo=github)](https://github.com/Lukeus/app-shell/releases/latest)
 [![GitHub all releases](https://img.shields.io/github/downloads/Lukeus/app-shell/total?logo=github)](https://github.com/Lukeus/app-shell/releases)
@@ -705,15 +707,57 @@ Default settings location:
 }
 ```
 
-## Security
+## 🔒 Security
 
-App Shell follows Electron security best practices:
+### Security Badges Status
 
-- Context isolation enabled
-- Node.js integration disabled in renderers
-- Content Security Policy implemented
-- Secure IPC communication
-- Sandboxed renderers
+| Security Check | Status | Description |
+|----------------|--------|-------------|
+| **CodeQL Analysis** | [![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml) | GitHub's semantic code analysis |
+| **Security Audit** | [![Security Audit](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml) | Automated dependency vulnerability scanning |
+| **Snyk Monitoring** | [![Known Vulnerabilities](https://snyk.io/test/github/Lukeus/app-shell/badge.svg)](https://snyk.io/test/github/Lukeus/app-shell) | Real-time vulnerability monitoring |
+| **License Compliance** | [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell?ref=badge_shield) | Open source license compliance |
+
+### Electron Security Best Practices
+
+App Shell implements comprehensive Electron security measures:
+
+#### ✅ **Core Security Features**
+- **Context Isolation**: ✅ Enabled - Prevents access between main world and isolated world
+- **Node.js Integration**: ❌ Disabled in renderers - No direct Node.js access from UI
+- **Remote Module**: ❌ Disabled - No remote module usage
+- **Preload Scripts**: ✅ Secure - Limited API exposure via contextBridge
+- **Content Security Policy**: ✅ Implemented - Prevents XSS and code injection
+- **Sandboxed Renderers**: ✅ Enabled - Renderer processes run in sandbox mode
+
+#### 🛡️ **IPC Security**
+- **Secure Channels**: All IPC communication uses predefined, validated channels
+- **Input Validation**: All IPC messages are type-checked and validated
+- **No Arbitrary Code**: Extension system prevents arbitrary code execution
+- **Permission Model**: Extensions require explicit permissions for sensitive operations
+
+#### 🔐 **Extension Security**
+- **Manifest Validation**: All extensions must have valid manifests
+- **Code Signing**: Extensions are verified before loading
+- **Sandbox Isolation**: Extensions run in isolated contexts
+- **API Restrictions**: Limited API surface exposed to extensions
+
+#### 📊 **Security Monitoring**
+- **Automated Scans**: Daily security audits via GitHub Actions
+- **Dependency Checks**: Automated vulnerability scanning with Snyk
+- **Code Analysis**: Static analysis with CodeQL
+- **License Compliance**: FOSSA license scanning
+
+### Security Reporting
+
+Found a security issue? Please report it responsibly:
+
+- **Email**: [security@lukeus.dev](mailto:security@lukeus.dev)
+- **GPG**: Available upon request
+- **Response Time**: Within 48 hours
+- **Disclosure**: Coordinated disclosure preferred
+
+See our [Security Policy](SECURITY.md) for detailed reporting guidelines.
 
 ## Contributing
 
