@@ -173,3 +173,255 @@ jobs:
 
       - name: Run security audit
         run: pnpm audit
+
+  # Only create releases on main branch pushes (not PRs)
+  create-release:
+    name: Create Release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, build, test, security-audit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for version calculation
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install system dependencies (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libgtk-3-0 libxss1 libgconf-2-4 libxtst6 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo1 libdrm2 libgtk-3-0 libgdk-pixbuf2.0-0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Calculate version and create tag (Linux only)
+        if: matrix.platform == 'linux'
+        id: version
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Get last git tag or use v0.0.0 if no tags exist
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last tag: $LAST_TAG"
+
+          # Extract version numbers (remove 'v' prefix if present)
+          LAST_VERSION=${LAST_TAG#v}
+
+          # If current package.json version is different from last tag, use package.json version
+          if [ "$CURRENT_VERSION" != "$LAST_VERSION" ]; then
+            NEW_VERSION="$CURRENT_VERSION"
+          else
+            # Auto-increment patch version
+            IFS='.' read -ra VERSION_PARTS <<< "$LAST_VERSION"
+            MAJOR=${VERSION_PARTS[0]}
+            MINOR=${VERSION_PARTS[1]}
+            PATCH=${VERSION_PARTS[2]}
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          fi
+
+          NEW_TAG="v$NEW_VERSION"
+          echo "New version: $NEW_VERSION"
+          echo "New tag: $NEW_TAG"
+
+          # Update package.json version
+          npm version $NEW_VERSION --no-git-tag-version
+
+          # Create and push tag
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git tag -a $NEW_TAG -m "Release $NEW_TAG"
+          git push origin main
+          git push origin $NEW_TAG
+
+          # Set outputs
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get version from Linux job
+        if: matrix.platform != 'linux'
+        id: get-version
+        run: |
+          # Wait a moment for tag to be available
+          sleep 10
+
+          # Get the latest tag
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          VERSION=${LATEST_TAG#v}
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build application
+        run: pnpm run build
+
+      - name: Package application (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          pnpm run package:linux
+          echo "📦 Linux packages created:"
+          ls -la release/build/
+
+      - name: Package application (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          pnpm run package:win
+          echo "📦 Windows packages created:"
+          dir release/build/
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Package application (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          pnpm run package:mac
+          echo "📦 macOS packages created:"
+          ls -la release/build/
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload Linux artifacts
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages-${{ steps.version.outputs.version || steps.get-version.outputs.version }}
+          path: |
+            release/build/*.AppImage
+            release/build/*.deb
+            release/build/*.rpm
+            release/build/*.snap
+          retention-days: 90
+
+      - name: Upload Windows artifacts
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages-${{ steps.get-version.outputs.version }}
+          path: |
+            release/build/*.exe
+            release/build/*.msi
+          retention-days: 90
+
+      - name: Upload macOS artifacts
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-packages-${{ steps.get-version.outputs.version }}
+          path: |
+            release/build/*.dmg
+            release/build/*.zip
+          retention-days: 90
+
+  publish-release:
+    name: Publish GitHub Release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [create-release]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get-tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          VERSION=${LATEST_TAG#v}
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-packages-*'
+          merge-multiple: true
+          path: ./release-assets/
+
+      - name: List downloaded artifacts
+        run: |
+          echo "📦 Downloaded release assets:"
+          find ./release-assets/ -type f -exec ls -la {} \;
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get-tag.outputs.tag }}
+          name: 'App Shell ${{ steps.get-tag.outputs.tag }}'
+          draft: false
+          prerelease: ${{ contains(steps.get-tag.outputs.tag, 'beta') || contains(steps.get-tag.outputs.tag, 'alpha') }}
+          generate_release_notes: true
+          body: |
+            ## 🚀 App Shell ${{ steps.get-tag.outputs.tag }}
+
+            An enterprise-grade, cross-platform Electron app shell with extension support.
+
+            ### 📥 Downloads
+
+            **Windows:**
+            - `.exe` - Windows installer (recommended)
+            - `.msi` - Windows MSI installer
+
+            **macOS:**
+            - `.dmg` - macOS disk image (recommended)
+            - `.zip` - macOS app bundle
+
+            **Linux:**
+            - `.AppImage` - Portable Linux application (recommended)
+            - `.deb` - Debian/Ubuntu package
+            - `.rpm` - Red Hat/Fedora package
+            - `.snap` - Snap package
+
+            ### ✨ What's New
+
+            See the auto-generated release notes below for detailed changes.
+
+            ### 🛠️ Installation
+
+            1. Download the appropriate package for your operating system
+            2. Install/run the application
+            3. The app shell is ready to use with extension support!
+
+            ### 📚 Documentation
+
+            - [Extension Development Guide](https://github.com/${{ github.repository }}/blob/main/docs/extension-development.md)
+            - [Contributing Guidelines](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md)
+
+            ---
+
+            **Platform Support:** Windows 10+, macOS 10.14+, Ubuntu 18.04+  
+            **Architecture:** x64, ARM64 (where supported)
+          files: |
+            ./release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

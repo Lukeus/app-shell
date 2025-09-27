@@ -219,6 +219,100 @@ export class ExtensionManager {
         });
       },
     });
+
+    // Marketplace commands
+    this.registerCommand({
+      command: 'marketplace.showMarketplace',
+      title: 'Marketplace: Browse Extensions',
+      category: 'Marketplace',
+      callback: async () => {
+        // This will be handled by the renderer to show the marketplace UI
+        return { action: 'showMarketplace' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'marketplace.showInstalled',
+      title: 'Marketplace: Show Installed Extensions',
+      category: 'Marketplace',
+      callback: async () => {
+        return { action: 'showInstalled' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'marketplace.checkUpdates',
+      title: 'Marketplace: Check for Updates',
+      category: 'Marketplace',
+      callback: async () => {
+        return { action: 'checkUpdates' };
+      },
+    });
+
+    // Sidebar navigation commands
+    this.registerCommand({
+      command: 'sidebar.toggleSidebar',
+      title: 'View: Toggle Sidebar',
+      category: 'View',
+      callback: async () => {
+        return { action: 'toggleSidebar' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'sidebar.showExtensions',
+      title: 'View: Show Extensions',
+      category: 'View',
+      callback: async () => {
+        return { action: 'showExtensions' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'sidebar.showMarketplace',
+      title: 'View: Show Marketplace',
+      category: 'View',
+      callback: async () => {
+        return { action: 'showMarketplace' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'sidebar.showSettings',
+      title: 'View: Show Settings',
+      category: 'View',
+      callback: async () => {
+        return { action: 'showSettings' };
+      },
+    });
+
+    // Panel commands
+    this.registerCommand({
+      command: 'panel.togglePanel',
+      title: 'View: Toggle Panel',
+      category: 'View',
+      callback: async () => {
+        return { action: 'togglePanel' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'panel.showTerminal',
+      title: 'Terminal: Show Terminal',
+      category: 'Terminal',
+      callback: async () => {
+        return { action: 'showTerminal' };
+      },
+    });
+
+    this.registerCommand({
+      command: 'panel.hidePanel',
+      title: 'View: Hide Panel',
+      category: 'View',
+      callback: async () => {
+        return { action: 'hidePanel' };
+      },
+    });
   }
 
   private async discoverExtensions(): Promise<void> {

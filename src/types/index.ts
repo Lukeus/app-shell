@@ -313,6 +313,115 @@ export interface ExtensionActivationEvent {
   activationEvent: string;
 }
 
+// Plugin Marketplace
+export interface MarketplacePlugin {
+  id: string;
+  name: string;
+  displayName: string;
+  version: string;
+  description: string;
+  longDescription?: string;
+  author: {
+    name: string;
+    email?: string;
+    url?: string;
+  };
+  publisher: string;
+  category: string;
+  tags: string[];
+  icon?: string;
+  screenshots?: string[];
+  repository?: {
+    type: string;
+    url: string;
+  };
+  homepage?: string;
+  license: string;
+  engines: {
+    'app-shell': string;
+  };
+  downloadCount: number;
+  rating: {
+    average: number;
+    count: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  versions: MarketplacePluginVersion[];
+  isInstalled?: boolean;
+  installedVersion?: string;
+  hasUpdate?: boolean;
+}
+
+export interface MarketplacePluginVersion {
+  version: string;
+  downloadUrl: string;
+  size: number;
+  changelog?: string;
+  publishedAt: string;
+  engines: {
+    'app-shell': string;
+  };
+}
+
+export interface MarketplaceSearchQuery {
+  query?: string;
+  category?: string;
+  tags?: string[];
+  sortBy?: 'relevance' | 'name' | 'rating' | 'downloads' | 'updated';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface MarketplaceSearchResult {
+  plugins: MarketplacePlugin[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+export interface MarketplaceCategory {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  count: number;
+}
+
+export interface PluginInstallation {
+  plugin: MarketplacePlugin;
+  status: 'downloading' | 'extracting' | 'installing' | 'completed' | 'failed';
+  progress: number;
+  error?: string;
+}
+
+export interface PluginUpdate {
+  plugin: MarketplacePlugin;
+  currentVersion: string;
+  availableVersion: string;
+  changelog?: string;
+}
+
+export interface MarketplaceRegistry {
+  name: string;
+  url: string;
+  enabled: boolean;
+  lastSync?: string;
+}
+
+export interface MarketplaceService {
+  searchPlugins(query: MarketplaceSearchQuery): Promise<MarketplaceSearchResult>;
+  getPlugin(pluginId: string): Promise<MarketplacePlugin | null>;
+  getCategories(): Promise<MarketplaceCategory[]>;
+  installPlugin(pluginId: string, version?: string): Promise<void>;
+  updatePlugin(pluginId: string): Promise<void>;
+  uninstallPlugin(pluginId: string): Promise<void>;
+  checkForUpdates(): Promise<PluginUpdate[]>;
+  getInstalledPlugins(): Promise<MarketplacePlugin[]>;
+}
+
 // Logging
 export interface Logger {
   debug(message: string, ...args: any[]): void;

@@ -6,11 +6,11 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 module.exports = {
   target: 'electron-renderer',
-  entry: './src/renderer/index.ts',
+  entry: './src/renderer/index.tsx',
   mode: isDevelopment ? 'development' : 'production',
   devtool: isDevelopment ? 'source-map' : false,
   resolve: {
-    extensions: ['.ts', '.js', '.css'],
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.css'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
       '@main': path.resolve(__dirname, 'src/main'),
@@ -21,7 +21,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.(ts|tsx)$/,
         exclude: /node_modules/,
         use: {
           loader: 'ts-loader',
@@ -32,7 +32,18 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                config: path.resolve(__dirname, 'postcss.config.js'),
+              },
+            },
+          },
+        ],
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
