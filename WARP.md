@@ -1,5 +1,24 @@
 # WARP.md - App Shell Project Context
 
+## ⚠️ CRITICAL PROJECT RULES - READ FIRST ⚠️
+
+### **NEVER TAKE SHORTCUTS - QUALITY ABOVE ALL**
+
+🛑 **STOP**: Before making any changes, remember:
+
+- **Quality and correctness ALWAYS take precedence over speed**
+- **No shortcuts, hacks, or "quick fixes" are acceptable**
+- **If the task seems too complex, break it into smaller, well-architected pieces**
+- **Every line of code must be production-ready and maintainable**
+- **Test thoroughly on all target platforms (Windows, macOS, Linux)**
+- **Follow TypeScript strict mode - no `any` types or compiler warnings**
+- **Implement proper error handling with comprehensive logging**
+- **Maintain security boundaries - never bypass Electron security features**
+
+**Enterprise-grade means enterprise-quality. No exceptions.**
+
+---
+
 ## Project Overview
 
 App Shell is an enterprise-grade, cross-platform Electron application shell designed as a reusable template for building extensible desktop applications. Think VS Code's architecture, but as a foundation for any type of application that needs extension support, theming, and cross-platform compatibility.
@@ -345,6 +364,10 @@ When working on this project:
 The codebase prioritizes **quality and maintainability** over development speed. Every change should be production-ready and follow enterprise standards.
 
 ---
+
+## Rules
+
+- Make sure to follow the rules.
 
 _Last Updated: September 27, 2025_  
 _Status: Foundation Complete, Extension System In Progress_

@@ -1,26 +1,46 @@
 # App Shell
 
+[![CI](https://github.com/your-org/app-shell/workflows/CI/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/ci.yml)
+[![Manual Release](https://github.com/your-org/app-shell/workflows/Manual%20Release/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/release.yml)
+[![CodeQL](https://github.com/your-org/app-shell/workflows/CodeQL/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/codeql.yml)
+[![Security](https://github.com/your-org/app-shell/workflows/Security/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/security.yml)
+
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/your-org/app-shell?sort=semver&logo=github)](https://github.com/your-org/app-shell/releases/latest)
+[![GitHub all releases](https://img.shields.io/github/downloads/your-org/app-shell/total?logo=github)](https://github.com/your-org/app-shell/releases)
+[![GitHub issues](https://img.shields.io/github/issues/your-org/app-shell?logo=github)](https://github.com/your-org/app-shell/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/your-org/app-shell?logo=github)](https://github.com/your-org/app-shell/pulls)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Electron](https://img.shields.io/badge/Electron-191970?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+
+[![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron)](#getting-started)
+[![Architecture](https://img.shields.io/badge/Architecture-x64%20%7C%20ARM64-blue)](#getting-started)
+[![License](https://img.shields.io/github/license/your-org/app-shell?logo=open-source-initiative)](LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+
 An enterprise-grade, cross-platform Electron application shell with extension support - similar to VS Code but designed as a reusable template for building extensible desktop applications.
 
 ## Preview
 
-![App Shell Main Interface](screenshots/app-shell-main.png)
-_Main interface showing the welcome screen, sidebar, and terminal panel_
+Comming soon.
 
-<details>
-<summary>🖼️ More Screenshots</summary>
+## 📥 Download
 
-### Command Palette
+[![Latest Release](https://img.shields.io/github/v/release/your-org/app-shell?label=Download&logo=github&style=for-the-badge)](https://github.com/your-org/app-shell/releases/latest)
 
-![Command Palette](screenshots/app-shell-command-palette.png)
-_Built-in command palette with fuzzy search (Cmd+Shift+P / Ctrl+Shift+P)_
+**Quick Downloads:**
 
-### Terminal Integration
+| Platform                                                                             | Package                                                                                                                                                                                                                                                             | Architecture |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white) | [.exe Installer](https://github.com/your-org/app-shell/releases/latest) • [.msi Package](https://github.com/your-org/app-shell/releases/latest)                                                                                                                     | x64, ARM64   |
+| ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)       | [.dmg Disk Image](https://github.com/your-org/app-shell/releases/latest) • [.zip Archive](https://github.com/your-org/app-shell/releases/latest)                                                                                                                    | x64, ARM64   |
+| ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)       | [.AppImage](https://github.com/your-org/app-shell/releases/latest) • [.deb](https://github.com/your-org/app-shell/releases/latest) • [.rpm](https://github.com/your-org/app-shell/releases/latest) • [.snap](https://github.com/your-org/app-shell/releases/latest) | x64, ARM64   |
 
-![Terminal](screenshots/app-shell-terminal.png)
-_Integrated terminal with xterm.js and OS-native shell support_
-
-</details>
+> **Note:** Releases are automatically built and published when changes are pushed to the main branch. All packages are code-signed and verified.
 
 ## Features
 
@@ -41,6 +61,307 @@ _Integrated terminal with xterm.js and OS-native shell support_
 - **IPC Communication**: Secure main-renderer communication
 - **State Management**: Persistent application state
 - **Plugin API**: Rich extension development API
+
+#### System Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "Electron App"
+        subgraph "Main Process (Node.js)"
+            Main["main.ts<br/>Application Entry"]
+            WM["WindowManager<br/>Window Lifecycle"]
+            EM["ExtensionManager<br/>Plugin System"]
+            SM["SettingsManager<br/>Configuration"]
+            TM["TerminalManager<br/>Terminal Integration"]
+            IPC["IPCManager<br/>Communication Bridge"]
+            Logger["Logger<br/>Centralized Logging"]
+        end
+
+        subgraph "Preload Script (Bridge)"
+            Preload["preload.ts<br/>Security Bridge"]
+            API["Exposed APIs<br/>window.electronAPI"]
+        end
+
+        subgraph "Renderer Process (Chromium)"
+            React["React App<br/>UI Framework"]
+            Components["UI Components<br/>TitleBar, Sidebar, etc."]
+            Context["React Context<br/>State Management"]
+            Terminal["xterm.js<br/>Terminal Emulator"]
+        end
+    end
+
+    subgraph "Extensions"
+        Ext1["Extension 1<br/>Custom Logic"]
+        Ext2["Extension 2<br/>Themes/Commands"]
+        ExtN["Extension N<br/>Marketplace"]
+    end
+
+    subgraph "External Systems"
+        FS["File System<br/>Settings, Logs"]
+        OS["Operating System<br/>Terminal, Shell"]
+        Network["Network<br/>Extension Store"]
+    end
+
+    %% Main Process connections
+    Main --> WM
+    Main --> EM
+    Main --> SM
+    Main --> TM
+    Main --> IPC
+    Main --> Logger
+
+    %% IPC Bridge
+    IPC <--> Preload
+    Preload --> API
+    API <--> React
+
+    %% Renderer connections
+    React --> Components
+    React --> Context
+    React --> Terminal
+
+    %% Extension system
+    EM --> Ext1
+    EM --> Ext2
+    EM --> ExtN
+
+    %% External connections
+    SM <--> FS
+    TM <--> OS
+    EM <--> Network
+    Logger --> FS
+
+    %% Styling
+    classDef mainProcess fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef renderer fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef preload fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef extension fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef external fill:#fafafa,stroke:#424242,stroke-width:2px
+
+    class Main,WM,EM,SM,TM,IPC,Logger mainProcess
+    class React,Components,Context,Terminal renderer
+    class Preload,API preload
+    class Ext1,Ext2,ExtN extension
+    class FS,OS,Network external
+```
+
+## 📊 Platform Flow Diagrams
+
+### Application Startup Sequence
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main as Main Process
+    participant WM as WindowManager
+    participant EM as ExtensionManager
+    participant SM as SettingsManager
+    participant TM as TerminalManager
+    participant Preload
+    participant Renderer as Renderer Process
+    participant UI as React UI
+
+    User->>Main: Launch Application
+
+    Note over Main: Application Initialization
+    Main->>Main: Initialize Logger
+    Main->>SM: Initialize Settings
+    SM->>SM: Load user preferences
+    SM-->>Main: Settings loaded
+
+    Main->>WM: Create main window
+    WM->>WM: Configure window options
+    WM->>Preload: Load preload script
+    Preload->>Preload: Setup IPC bridge
+    WM->>Renderer: Create renderer process
+    Renderer->>UI: Initialize React app
+
+    UI->>Preload: Request initial state
+    Preload->>Main: IPC: app:getInitialState
+    Main->>SM: Get current settings
+    SM-->>Main: Return settings
+    Main-->>Preload: Return initial state
+    Preload-->>UI: Provide initial state
+
+    Main->>EM: Initialize extensions
+    EM->>EM: Scan extension directories
+    EM->>EM: Validate extension manifests
+    EM->>EM: Load enabled extensions
+    EM-->>Main: Extensions initialized
+
+    Main->>TM: Initialize terminal
+    TM->>TM: Detect system shell
+    TM-->>Main: Terminal ready
+
+    UI->>UI: Render application UI
+    UI->>Preload: Request terminal creation
+    Preload->>TM: Create new terminal
+    TM->>TM: Spawn shell process
+    TM-->>Preload: Terminal created
+    Preload-->>UI: Terminal ready
+
+    Note over User,UI: Application Ready
+    UI-->>User: Display interface
+```
+
+### Extension Loading Flow
+
+```mermaid
+sequenceDiagram
+    participant EM as ExtensionManager
+    participant FS as File System
+    participant Ext as Extension
+    participant CM as CommandManager
+    participant TM as ThemeManager
+    participant UI as UI Components
+
+    Note over EM: Extension Discovery Phase
+    EM->>FS: Scan extensions directory
+    FS-->>EM: Return extension folders
+
+    loop For each extension
+        EM->>FS: Read package.json
+        FS-->>EM: Extension manifest
+        EM->>EM: Validate manifest schema
+
+        alt Valid extension
+            EM->>EM: Add to extension registry
+        else Invalid extension
+            EM->>EM: Log validation error
+            EM->>EM: Skip extension
+        end
+    end
+
+    Note over EM: Extension Loading Phase
+    loop For each enabled extension
+        EM->>FS: Load extension module
+        FS-->>EM: Extension code
+        EM->>Ext: Call activate(context)
+
+        Note over Ext: Extension Initialization
+        Ext->>Ext: Register event listeners
+
+        alt Has commands
+            Ext->>CM: Register commands
+            CM->>CM: Add to command registry
+        end
+
+        alt Has themes
+            Ext->>TM: Register themes
+            TM->>TM: Add to theme registry
+        end
+
+        alt Has UI contributions
+            Ext->>UI: Register UI components
+            UI->>UI: Update interface
+        end
+
+        Ext-->>EM: Activation complete
+    end
+
+    EM->>EM: Extensions loaded successfully
+```
+
+### Command Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as React UI
+    participant CP as Command Palette
+    participant Preload
+    participant IPC as IPC Manager
+    participant CM as Command Manager
+    participant Ext as Extension
+    participant Main as Main Process
+
+    User->>UI: Press Ctrl+Shift+P
+    UI->>CP: Open command palette
+    CP->>CP: Display command list
+    CP->>Preload: Get available commands
+    Preload->>IPC: commands:list
+    IPC->>CM: Get all commands
+    CM-->>IPC: Return command list
+    IPC-->>Preload: Commands data
+    Preload-->>CP: Command list
+    CP->>CP: Update UI with commands
+
+    User->>CP: Type search query
+    CP->>CP: Filter commands (fuzzy search)
+    CP->>CP: Update display
+
+    User->>CP: Select command
+    CP->>Preload: Execute command
+    Preload->>IPC: commands:execute
+    IPC->>CM: Execute command by ID
+
+    alt Built-in command
+        CM->>Main: Execute built-in handler
+        Main->>Main: Perform action
+        Main-->>CM: Action complete
+    else Extension command
+        CM->>Ext: Call command handler
+        Ext->>Ext: Execute custom logic
+        Ext-->>CM: Execution complete
+    end
+
+    CM-->>IPC: Command executed
+    IPC-->>Preload: Execution result
+    Preload-->>CP: Result
+    CP->>CP: Close command palette
+    CP->>UI: Return focus to main UI
+
+    Note over User,UI: Command completed
+```
+
+### Terminal Integration Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Terminal UI
+    participant Preload
+    participant TM as TerminalManager
+    participant PTY as node-pty
+    participant Shell as System Shell
+    participant XTerm as xterm.js
+
+    User->>UI: Click "New Terminal"
+    UI->>Preload: Create new terminal
+    Preload->>TM: terminal:create
+
+    TM->>TM: Detect system shell
+    TM->>PTY: Create pseudo-terminal
+    PTY->>Shell: Spawn shell process
+    Shell-->>PTY: Shell ready
+    PTY-->>TM: PTY created
+
+    TM->>TM: Setup data handlers
+    TM->>TM: Generate terminal ID
+    TM-->>Preload: Terminal created (ID)
+    Preload-->>UI: Terminal ready
+
+    UI->>XTerm: Initialize terminal emulator
+    XTerm->>XTerm: Setup terminal display
+    XTerm-->>UI: Terminal UI ready
+
+    Note over User,Shell: Terminal Active
+
+    User->>XTerm: Type command
+    XTerm->>Preload: Send input data
+    Preload->>TM: terminal:input
+    TM->>PTY: Write to shell
+    PTY->>Shell: Execute command
+
+    Shell->>PTY: Output data
+    PTY->>TM: Data event
+    TM->>Preload: terminal:data
+    Preload->>XTerm: Display output
+    XTerm->>UI: Update terminal display
+    UI-->>User: Show command output
+
+    Note over User,UI: Interactive Terminal Session
+```
 
 ## Getting Started
 
@@ -126,7 +447,74 @@ This project includes comprehensive testing:
 - **Formatting**: Prettier code formatting (`pnpm format`)
 - **Security**: Automated dependency auditing
 
-**CI/CD**: The GitHub Actions pipeline focuses on cross-platform build verification, code quality, and security scanning. E2E tests should be run locally during development due to Electron's complexity in CI environments.
+**CI/CD**: The GitHub Actions pipeline provides comprehensive automation including cross-platform builds, code quality checks, security scanning, and automatic releases.
+
+### 🚀 CI/CD Pipeline Flow
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant GitHub
+    participant CI as GitHub Actions
+    participant Build as Build Matrix
+    participant Release as Release Process
+    participant Users
+
+    Dev->>GitHub: Push to main branch
+    GitHub->>CI: Trigger CI workflow
+
+    Note over CI: Parallel Job Execution
+
+    par Lint & Format
+        CI->>CI: ESLint checks
+        CI->>CI: Prettier formatting
+        CI->>CI: TypeScript compilation
+    and Build Matrix
+        CI->>Build: Ubuntu + Node 18,20
+        CI->>Build: Windows + Node 18,20
+        CI->>Build: macOS + Node 18,20
+        Build->>Build: Install dependencies
+        Build->>Build: Build application
+        Build->>Build: Verify artifacts
+    and Security
+        CI->>CI: Dependency audit
+        CI->>CI: CodeQL analysis
+        CI->>CI: Security scanning
+    end
+
+    alt All jobs pass
+        Note over CI: Success - Trigger Release
+        CI->>Release: Start release process
+
+        par Cross-Platform Packaging
+            Release->>Release: Build Linux (.AppImage, .deb, .rpm, .snap)
+            Release->>Release: Build Windows (.exe, .msi)
+            Release->>Release: Build macOS (.dmg, .zip)
+        end
+
+        Release->>Release: Calculate version
+        Release->>Release: Create git tag
+        Release->>Release: Update package.json
+        Release->>GitHub: Create GitHub release
+        Release->>GitHub: Upload all artifacts
+        GitHub->>Users: 🎉 New release available!
+
+    else Any job fails
+        CI->>Dev: ❌ Build failed notification
+        Note over Dev: Fix issues and retry
+    end
+```
+
+#### Build Status
+
+| Component        | Status                                                                                                                                                        | Description                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **Linting**      | [![Lint Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=lint)](https://github.com/your-org/app-shell/actions)               | ESLint + Prettier code quality     |
+| **Build Matrix** | [![Build Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=build)](https://github.com/your-org/app-shell/actions)             | Cross-platform build verification  |
+| **Security**     | [![Security Status](https://img.shields.io/github/workflow/status/your-org/app-shell/Security?label=security)](https://github.com/your-org/app-shell/actions) | Dependency audit + CodeQL          |
+| **Release**      | [![Release Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=release)](https://github.com/your-org/app-shell/releases)        | Automated packaging + distribution |
+
+> 💡 **Tip**: E2E tests run locally with `pnpm test` due to Electron's complexity in CI environments. All other quality checks are automated.
 
 ## Extension Development
 

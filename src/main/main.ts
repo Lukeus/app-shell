@@ -5,6 +5,7 @@ import { SettingsManager } from './settings-manager';
 import { WebTerminalManager } from './web-terminal-manager';
 import { IPCManager } from './ipc-manager';
 import { CommandManager } from './managers/command-manager';
+import { MarketplaceService } from './marketplace-service';
 import { Logger } from './logger';
 import { Platform } from '../types';
 
@@ -15,6 +16,7 @@ class AppShell {
   private terminalManager: any; // TerminalManager | MockTerminalManager | WebTerminalManager
   private ipcManager: IPCManager;
   private commandManager: CommandManager;
+  private marketplaceService: MarketplaceService;
   private logger: Logger;
   private platform: Platform;
 
@@ -30,6 +32,7 @@ class AppShell {
     this.terminalManager = new WebTerminalManager();
     this.ipcManager = new IPCManager();
     this.commandManager = new CommandManager(this.logger);
+    this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
 
     this.setupAppEventListeners();
     this.setupIPCHandlers();
@@ -55,6 +58,9 @@ class AppShell {
 
       // Initialize extensions
       await this.extensionManager.init();
+
+      // Initialize marketplace service
+      await this.marketplaceService.init();
 
       // Setup application menu
       this.setupApplicationMenu();
@@ -93,6 +99,9 @@ class AppShell {
 
         // Dispose of extensions
         await this.extensionManager.dispose();
+
+        // Dispose of marketplace service
+        await this.marketplaceService.dispose();
 
         // Dispose of command manager
         this.commandManager.dispose();
@@ -245,6 +254,46 @@ class AppShell {
     this.ipcManager.handle('app:restart', () => {
       app.relaunch();
       app.quit();
+    });
+
+    // Marketplace management
+    this.ipcManager.handle('marketplace:search', async (event, query) => {
+      return this.marketplaceService.searchPlugins(query);
+    });
+
+    this.ipcManager.handle('marketplace:getPlugin', async (event, pluginId: string) => {
+      return this.marketplaceService.getPlugin(pluginId);
+    });
+
+    this.ipcManager.handle('marketplace:getCategories', async _event => {
+      return this.marketplaceService.getCategories();
+    });
+
+    this.ipcManager.handle(
+      'marketplace:install',
+      async (event, pluginId: string, version?: string) => {
+        await this.marketplaceService.installPlugin(pluginId, version);
+      }
+    );
+
+    this.ipcManager.handle('marketplace:update', async (event, pluginId: string) => {
+      await this.marketplaceService.updatePlugin(pluginId);
+    });
+
+    this.ipcManager.handle('marketplace:uninstall', async (event, pluginId: string) => {
+      await this.marketplaceService.uninstallPlugin(pluginId);
+    });
+
+    this.ipcManager.handle('marketplace:getInstalled', async _event => {
+      return this.marketplaceService.getInstalledPlugins();
+    });
+
+    this.ipcManager.handle('marketplace:checkUpdates', async _event => {
+      return this.marketplaceService.checkForUpdates();
+    });
+
+    this.ipcManager.handle('marketplace:getInstallationStatus', async (event, pluginId: string) => {
+      return this.marketplaceService.getInstallationStatus(pluginId);
     });
   }
 
