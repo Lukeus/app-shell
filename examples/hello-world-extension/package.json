@@ -1,0 +1,53 @@
+{
+  "name": "hello-world",
+  "displayName": "Hello World Extension",
+  "version": "1.0.0",
+  "description": "A simple example extension for App Shell",
+  "main": "extension.js",
+  "author": "App Shell Team",
+  "license": "MIT",
+  "engines": {
+    "app-shell": "^1.0.0"
+  },
+  "activationEvents": [
+    "onCommand:helloWorld.sayHello",
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "helloWorld.sayHello",
+        "title": "Say Hello",
+        "category": "Hello World"
+      },
+      {
+        "command": "helloWorld.showInfo",
+        "title": "Show Extension Info",
+        "category": "Hello World"
+      }
+    ],
+    "themes": [
+      {
+        "id": "hello-world-theme",
+        "label": "Hello World Theme",
+        "path": "./themes/hello-world-theme.json"
+      }
+    ],
+    "settings": [
+      {
+        "key": "helloWorld.greeting",
+        "type": "string",
+        "default": "Hello",
+        "title": "Greeting Text",
+        "description": "The greeting text to display"
+      },
+      {
+        "key": "helloWorld.showTimestamp",
+        "type": "boolean",
+        "default": true,
+        "title": "Show Timestamp",
+        "description": "Whether to show timestamp in greetings"
+      }
+    ]
+  }
+}
