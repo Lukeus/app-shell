@@ -9,7 +9,7 @@ if (!isCI) {
   exec('pnpm run rebuild', (error, stdout, stderr) => {
     if (error) {
       console.log('⚠️  Native module rebuild failed, using fallback implementations');
-      console.log('This is normal for some environments and won\'t affect core functionality.');
+      console.log("This is normal for some environments and won't affect core functionality.");
       if (process.env.DEBUG) {
         console.log('Error details:', error.message);
       }
@@ -20,6 +20,10 @@ if (!isCI) {
     if (stderr && process.env.DEBUG) console.log('stderr:', stderr);
   });
 } else {
-  console.log('🚀 Skipping native rebuild in CI environment (' + (process.env.GITHUB_ACTIONS ? 'GitHub Actions' : 'CI') + ')');
+  console.log(
+    '🚀 Skipping native rebuild in CI environment (' +
+      (process.env.GITHUB_ACTIONS ? 'GitHub Actions' : 'CI') +
+      ')'
+  );
   console.log('Platform:', os.platform(), 'Arch:', os.arch());
 }
