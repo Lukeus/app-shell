@@ -1,0 +1,57 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'Lukeus'
+    assignees:
+      - 'Lukeus'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    groups:
+      electron:
+        patterns:
+          - 'electron*'
+          - '@electron*'
+      playwright:
+        patterns:
+          - 'playwright*'
+          - '@playwright*'
+      webpack:
+        patterns:
+          - 'webpack*'
+          - '*-webpack-plugin'
+          - '*-loader'
+      typescript:
+        patterns:
+          - 'typescript*'
+          - '@types/*'
+          - 'ts-*'
+      eslint:
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - '@typescript-eslint/*'
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+    reviewers:
+      - 'Lukeus'
+    assignees:
+      - 'Lukeus'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'

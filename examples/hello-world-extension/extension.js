@@ -1,3 +1,6 @@
+/* eslint-env node */
+/* global console, module */
+
 /**
  * Hello World Extension for App Shell
  *

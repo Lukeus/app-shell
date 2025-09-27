@@ -43,7 +43,8 @@ class ExtensionStateManager implements StateManager {
         const parsed = JSON.parse(content);
         this.data = new Map(Object.entries(parsed));
       }
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       // Ignore errors, start with empty state
     }
   }
@@ -57,7 +58,8 @@ class ExtensionStateManager implements StateManager {
 
       const obj = Object.fromEntries(this.data);
       fs.writeFileSync(this.filePath, JSON.stringify(obj, null, 2), 'utf8');
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       // Ignore save errors
     }
   }
@@ -195,7 +197,7 @@ export class ExtensionManager {
       category: 'Developer',
       callback: async () => {
         // Reload the renderer process
-        const { BrowserWindow } = require('electron');
+        const { BrowserWindow } = await import('electron');
         const windows = BrowserWindow.getAllWindows();
         windows.forEach((window: any) => window.reload());
       },
@@ -206,7 +208,7 @@ export class ExtensionManager {
       title: 'Developer: Toggle Developer Tools',
       category: 'Developer',
       callback: async () => {
-        const { BrowserWindow } = require('electron');
+        const { BrowserWindow } = await import('electron');
         const windows = BrowserWindow.getAllWindows();
         windows.forEach((window: any) => {
           if (window.webContents.isDevToolsOpened()) {
@@ -370,7 +372,7 @@ export class ExtensionManager {
         // Clear require cache to allow reloading
         delete require.cache[require.resolve(extensionMainPath)];
 
-        const extensionModule = require(extensionMainPath);
+        const extensionModule = await import(extensionMainPath);
         loadedExt.module = extensionModule;
 
         // Call activate function if it exists
@@ -405,7 +407,7 @@ export class ExtensionManager {
   private registerContributedCommands(
     commands: any[],
     extensionModule: any,
-    context: ExtensionContext
+    _context: ExtensionContext
   ): void {
     for (const commandContrib of commands) {
       const callback =

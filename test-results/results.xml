@@ -1,0 +1,22 @@
+<testsuites id="" name="" tests="9" failures="0" skipped="0" errors="0" time="6.8080739999999995">
+<testsuite name="command-palette.spec.ts" timestamp="2025-09-27T19:03:38.259Z" hostname="electron" tests="9" failures="0" skipped="0" time="6.352" errors="0">
+<testcase name="App Shell - Command Palette › should open command palette with keyboard shortcut" classname="command-palette.spec.ts" time="0.106">
+</testcase>
+<testcase name="App Shell - Command Palette › should close command palette with Escape key" classname="command-palette.spec.ts" time="0.728">
+</testcase>
+<testcase name="App Shell - Command Palette › should display available commands" classname="command-palette.spec.ts" time="1.082">
+</testcase>
+<testcase name="App Shell - Command Palette › should filter commands based on search input" classname="command-palette.spec.ts" time="1.185">
+</testcase>
+<testcase name="App Shell - Command Palette › should navigate commands with arrow keys" classname="command-palette.spec.ts" time="0.585">
+</testcase>
+<testcase name="App Shell - Command Palette › should execute command on Enter press" classname="command-palette.spec.ts" time="1.03">
+</testcase>
+<testcase name="App Shell - Command Palette › should show command categories if available" classname="command-palette.spec.ts" time="0.613">
+</testcase>
+<testcase name="App Shell - Command Palette › should handle empty search results gracefully" classname="command-palette.spec.ts" time="0.875">
+</testcase>
+<testcase name="App Shell - Command Palette › should maintain focus within command palette" classname="command-palette.spec.ts" time="0.148">
+</testcase>
+</testsuite>
+</testsuites>

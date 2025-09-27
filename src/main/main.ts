@@ -2,7 +2,6 @@ import { app, BrowserWindow, Menu, shell, dialog } from 'electron';
 import { WindowManager } from './window-manager';
 import { ExtensionManager } from './extension-manager';
 import { SettingsManager } from './settings-manager';
-import { MockTerminalManager } from './mock-terminal-manager';
 import { WebTerminalManager } from './web-terminal-manager';
 import { IPCManager } from './ipc-manager';
 import { CommandManager } from './managers/command-manager';
@@ -27,15 +26,8 @@ class AppShell {
     this.settingsManager = new SettingsManager();
     this.windowManager = new WindowManager(this.settingsManager);
     this.extensionManager = new ExtensionManager(this.settingsManager);
-    // Initialize terminal manager with fallback
-    try {
-      const { TerminalManager } = require('./terminal-manager');
-      this.terminalManager = new TerminalManager();
-      this.logger.info('Using node-pty TerminalManager');
-    } catch (error) {
-      this.logger.warn('TerminalManager (node-pty) initialization failed, using WebTerminalManager fallback', error);
-      this.terminalManager = new WebTerminalManager();
-    }
+    // Initialize terminal manager with WebTerminalManager (node-pty will be loaded dynamically in init)
+    this.terminalManager = new WebTerminalManager();
     this.ipcManager = new IPCManager();
     this.commandManager = new CommandManager(this.logger);
 
@@ -52,7 +44,7 @@ class AppShell {
 
       // Create main window
       await this.windowManager.createMainWindow();
-      
+
       // Set main window reference in terminal manager if it's WebTerminalManager
       if (this.terminalManager instanceof WebTerminalManager) {
         const mainWindow = this.windowManager.getMainWindow();
@@ -221,7 +213,7 @@ class AppShell {
       await this.extensionManager.applyTheme(themeId);
     });
 
-    // Command execution is handled by CommandManager
+    // Command execution is handled by CommandManager directly via IPC
 
     // File system operations
     this.ipcManager.handle('fs:showOpenDialog', async (options: any) => {

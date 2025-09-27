@@ -9,30 +9,30 @@ async function globalSetup(config: FullConfig) {
 
   // Ensure the application is built before running tests
   console.log('📦 Building application...');
-  
+
   try {
     // Start the Electron application in test mode
     console.log('🖥️  Starting Electron application...');
     const electronPath = path.resolve(__dirname, '../node_modules/.bin/electron');
     const mainPath = path.resolve(__dirname, '../dist/main/main.js');
-    
+
     electronProcess = spawn(electronPath, [mainPath], {
-      env: { 
-        ...process.env, 
+      env: {
+        ...process.env,
         NODE_ENV: 'test',
-        ELECTRON_ENABLE_LOGGING: '1'
+        ELECTRON_ENABLE_LOGGING: '1',
       },
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
 
     if (electronProcess.stdout) {
-      electronProcess.stdout.on('data', (data) => {
+      electronProcess.stdout.on('data', data => {
         console.log(`Electron stdout: ${data}`);
       });
     }
 
     if (electronProcess.stderr) {
-      electronProcess.stderr.on('data', (data) => {
+      electronProcess.stderr.on('data', data => {
         console.error(`Electron stderr: ${data}`);
       });
     }

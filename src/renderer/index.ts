@@ -38,17 +38,8 @@ class AppRenderer {
 
       // Setup theme
       await this.applyTheme();
-      
-      // Add keyboard event listener for command palette
-      document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
-          e.preventDefault(); // Prevent default behavior
-          if (this.commandPalette) {
-            this.commandPalette.toggle();
-          }
-        }
-      });
-      
+
+      // Command palette handles its own keyboard shortcuts
     } catch (error) {
       console.error('❌ Failed to initialize renderer:', error);
     }
@@ -99,17 +90,17 @@ class AppRenderer {
           cursor: '#007acc',
           cursorAccent: '#1e1e1e',
           selectionBackground: '#264f78',
-          
+
           // ANSI colors
           black: '#000000',
           red: '#f44747',
-          green: '#608b4e', 
+          green: '#608b4e',
           yellow: '#ffcc02',
           blue: '#569cd6',
           magenta: '#c586c0',
           cyan: '#9cdcfe',
           white: '#d4d4d4',
-          
+
           // Bright colors
           brightBlack: '#666666',
           brightRed: '#f44747',
@@ -160,7 +151,7 @@ class AppRenderer {
         this.terminal.onData(data => {
           window.electronAPI?.writeToTerminal(terminalInfo.id, data);
         });
-        
+
         // Focus the terminal
         this.terminal.focus();
       } else {
@@ -202,7 +193,8 @@ class AppRenderer {
 
   private async applyTheme(): Promise<void> {
     try {
-      const currentTheme = await window.electronAPI?.getSetting('theme');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _currentTheme = await window.electronAPI?.getSetting('theme');
       // Theme will be applied via CSS custom properties in full implementation
     } catch (error) {
       console.error('Failed to apply theme:', error);

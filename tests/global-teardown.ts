@@ -8,9 +8,9 @@ async function globalTeardown() {
     if (electronProcess && !electronProcess.killed) {
       console.log('🔪 Terminating Electron process...');
       electronProcess.kill('SIGTERM');
-      
+
       // Wait for graceful shutdown, then force kill if necessary
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const timeout = setTimeout(() => {
           if (electronProcess && !electronProcess.killed) {
             console.log('⚡ Force killing Electron process...');

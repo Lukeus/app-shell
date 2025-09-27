@@ -1,0 +1,56 @@
+# CODEOWNERS file for App Shell
+# This file defines who must review changes to specific parts of the codebase
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - these users will be assigned to review all PRs unless overridden
+* @Lukeus
+
+# Security-critical files require security team review
+/SECURITY.md @Lukeus
+/CODE_OF_CONDUCT.md @Lukeus
+/.github/workflows/security.yml @Lukeus
+/.github/workflows/codeql.yml @Lukeus
+/scripts/setup-repo-security.sh @Lukeus
+
+# CI/CD workflows require maintainer review
+/.github/workflows/ @Lukeus
+/.github/dependabot.yml @Lukeus
+
+# Package management files require careful review
+/package.json @Lukeus
+/pnpm-lock.yaml @Lukeus
+/package-lock.json @Lukeus
+/yarn.lock @Lukeus
+
+# Core application security requires review
+/src/main/main.ts @Lukeus
+/src/preload/ @Lukeus
+/webpack.*.config.js @Lukeus
+
+# Configuration files
+/.eslintrc* @Lukeus
+/.prettierrc* @Lukeus
+/tsconfig.json @Lukeus
+/electron-builder.json @Lukeus
+
+# Extension system requires careful review due to security implications
+/src/extensions/ @Lukeus
+/src/main/extension-manager.ts @Lukeus
+
+# Documentation changes
+/README.md @Lukeus
+/CONTRIBUTING.md @Lukeus
+/CHANGELOG.md @Lukeus
+/docs/ @Lukeus
+
+# Release and deployment
+/scripts/ @Lukeus
+/Dockerfile @Lukeus
+/docker-compose.yml @Lukeus
+
+# Test configurations
+/playwright.config.ts @Lukeus
+/jest.config.js @Lukeus
+
+# Examples (can be more lenient but still need review)
+/examples/ @Lukeus

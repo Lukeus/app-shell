@@ -1,0 +1,108 @@
+repos:
+  # General code quality
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # Security scanning
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            pnpm-lock\.yaml|
+            package-lock\.json|
+            yarn\.lock
+          )$
+
+  # JavaScript/TypeScript linting
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: pnpm run lint
+        language: system
+        files: \.(js|jsx|ts|tsx)$
+        pass_filenames: false
+
+      - id: prettier
+        name: Prettier
+        entry: pnpm run format
+        language: system
+        files: \.(js|jsx|ts|tsx|json|md|yml|yaml)$
+        pass_filenames: false
+
+      # Security audit
+      - id: audit
+        name: Security Audit
+        entry: pnpm audit --audit-level=moderate
+        language: system
+        pass_filenames: false
+        files: package\.json
+
+      # License check
+      - id: license-check
+        name: License Compliance Check
+        entry: bash -c 'npx license-checker --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;Unlicense;CC0-1.0" --excludePrivatePackages || (echo "License compliance check failed. Run the command locally to see details." && exit 1)'
+        language: system
+        pass_filenames: false
+        files: package\.json
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        files: Dockerfile
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+
+  # Commit message formatting
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [optional-scope]
+
+  # File permissions
+  - repo: local
+    hooks:
+      - id: check-file-permissions
+        name: Check dangerous file permissions
+        entry: bash -c 'find . -type f -perm -002 -not -path "./.git/*" -not -path "./node_modules/*" | grep -v "^$" && echo "World-writable files found" && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
+
+# Configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
