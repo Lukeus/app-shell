@@ -13,7 +13,7 @@ export class WindowManager {
     this.settingsManager = settingsManager;
     this.logger = new Logger('WindowManager');
   }
-  
+
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow;
   }
@@ -201,7 +201,7 @@ export class WindowManager {
         // In production, load from built files
         await this.mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
       }
-      
+
       // Open DevTools only if explicitly requested
       if (process.env.OPEN_DEVTOOLS === 'true' || process.argv.includes('--devtools')) {
         this.mainWindow.webContents.openDevTools();

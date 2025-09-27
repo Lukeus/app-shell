@@ -1,7 +1,7 @@
 /**
  * Mock Terminal Manager
- * 
- * Provides a stub implementation of the terminal manager to bypass 
+ *
+ * Provides a stub implementation of the terminal manager to bypass
  * node-pty compilation issues during development and testing.
  */
 
@@ -15,13 +15,13 @@ export class MockTerminalManager {
     this.logger.info('Using mock terminal manager (node-pty not available)');
   }
 
-  async createTerminal(options?: any): Promise<{ id: string; pid: number }> {
+  async createTerminal(_options?: any): Promise<{ id: string; pid: number }> {
     const terminalId = `mock-terminal-${Date.now()}`;
     this.logger.info(`Mock terminal created: ${terminalId}`);
-    
+
     return {
       id: terminalId,
-      pid: 12345 // Mock PID
+      pid: 12345, // Mock PID
     };
   }
 

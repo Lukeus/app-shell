@@ -12,8 +12,8 @@ test.describe('App Shell - Application Startup', () => {
       args: [path.resolve(__dirname, '../../dist/main/main.js')],
       env: {
         ...process.env,
-        NODE_ENV: 'test'
-      }
+        NODE_ENV: 'test',
+      },
     });
 
     // Get the first window
@@ -74,16 +74,16 @@ test.describe('App Shell - Application Startup', () => {
     // Get initial window size
     const initialSize = await window.evaluate(() => ({
       width: window.innerWidth,
-      height: window.innerHeight
+      height: window.innerHeight,
     }));
 
     // Resize window
     await window.setViewportSize({ width: 1200, height: 800 });
-    
+
     // Check new size
     const newSize = await window.evaluate(() => ({
       width: window.innerWidth,
-      height: window.innerHeight
+      height: window.innerHeight,
     }));
 
     expect(newSize.width).toBe(1200);
@@ -94,7 +94,7 @@ test.describe('App Shell - Application Startup', () => {
   test('should handle focus properly', async () => {
     // Test that the window can be focused
     await window.focus();
-    
+
     // Check that document has focus
     const hasFocus = await window.evaluate(() => document.hasFocus());
     expect(hasFocus).toBe(true);

@@ -1,6 +1,6 @@
 /**
  * Web Terminal Manager
- * 
+ *
  * A terminal implementation that works through the web interface
  * without requiring native node-pty compilation.
  * Uses child_process.spawn instead of node-pty.
@@ -30,7 +30,7 @@ export class WebTerminalManager {
     this.logger = new Logger('WebTerminalManager');
     this.logger.info('Web Terminal Manager initialized');
   }
-  
+
   setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window;
     this.logger.info('Main window set for WebTerminalManager');
@@ -38,11 +38,11 @@ export class WebTerminalManager {
 
   async createTerminal(options?: any): Promise<{ id: string; pid: number }> {
     const terminalId = `web-terminal-${Date.now()}`;
-    
+
     // Determine shell based on platform
     const shell = this.getDefaultShell();
     const cwd = options?.cwd || os.homedir();
-    
+
     try {
       // Create shell process with proper environment
       const env = {
@@ -55,10 +55,15 @@ export class WebTerminalManager {
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
         ...options?.env,
       };
-      
-      this.logger.debug(`Creating shell process: ${shell} with env:`, { TERM: env.TERM, COLUMNS: env.COLUMNS, LINES: env.LINES });
-      
-      const childProcess = spawn(shell, ['-i', '-l'], { // -i for interactive, -l for login shell
+
+      this.logger.debug(`Creating shell process: ${shell} with env:`, {
+        TERM: env.TERM,
+        COLUMNS: env.COLUMNS,
+        LINES: env.LINES,
+      });
+
+      const childProcess = spawn(shell, ['-i', '-l'], {
+        // -i for interactive, -l for login shell
         cwd,
         stdio: ['pipe', 'pipe', 'pipe'],
         env,
@@ -73,18 +78,18 @@ export class WebTerminalManager {
       };
 
       this.sessions.set(terminalId, session);
-      
+
       // Add process event logging
       childProcess.on('spawn', () => {
         this.logger.info(`Terminal ${terminalId} process spawned successfully`);
       });
-      
-      childProcess.on('error', (error) => {
+
+      childProcess.on('error', error => {
         this.logger.error(`Terminal ${terminalId} process error:`, error);
       });
 
       // Handle process output
-      childProcess.stdout?.on('data', (data) => {
+      childProcess.stdout?.on('data', data => {
         const dataStr = data.toString();
         this.logger.debug(`Terminal ${terminalId} stdout:`, dataStr.slice(0, 100));
         // Send output directly to terminal, then add prompt
@@ -97,7 +102,7 @@ export class WebTerminalManager {
         }
       });
 
-      childProcess.stderr?.on('data', (data) => {
+      childProcess.stderr?.on('data', data => {
         const dataStr = data.toString();
         this.logger.debug(`Terminal ${terminalId} stderr:`, dataStr.slice(0, 100));
         this.sendToRenderer(terminalId, dataStr);
@@ -108,7 +113,7 @@ export class WebTerminalManager {
       });
 
       // Handle process exit
-      childProcess.on('exit', (code) => {
+      childProcess.on('exit', code => {
         this.logger.info(`Terminal ${terminalId} exited with code: ${code}`);
         this.sessions.delete(terminalId);
         this.sendToRenderer(terminalId, `\r\n[Process exited with code: ${code}]\r\n`);
@@ -116,16 +121,15 @@ export class WebTerminalManager {
 
       // Send initial prompt without extra messages to avoid clutter
       this.logger.info(`Sending welcome message for terminal ${terminalId}`);
-      
+
       // Send a clean prompt after a short delay
       setTimeout(() => {
         this.logger.info(`Sending initial prompt for terminal ${terminalId}`);
         this.sendToRenderer(terminalId, '$ ');
       }, 100);
-      
 
       this.logger.info(`Web terminal created: ${terminalId} (PID: ${childProcess.pid})`);
-      
+
       return {
         id: terminalId,
         pid: childProcess.pid || 0,
@@ -149,12 +153,12 @@ export class WebTerminalManager {
       if (!session.currentLine) {
         session.currentLine = '';
       }
-      
+
       if (data === '\r') {
         // Execute command when Enter is pressed
         this.logger.debug(`Executing command: ${session.currentLine}`);
         this.sendToRenderer(terminalId, '\r\n');
-        
+
         if (session.currentLine.trim()) {
           // Execute command directly for better reliability
           this.executeCommand(terminalId, session.currentLine.trim(), session.cwd);
@@ -162,7 +166,7 @@ export class WebTerminalManager {
           // Empty line, just show prompt
           this.sendToRenderer(terminalId, '$ ');
         }
-        
+
         session.currentLine = '';
       } else if (data === '\u007f' || data === '\b') {
         // Handle backspace
@@ -175,7 +179,6 @@ export class WebTerminalManager {
         session.currentLine += data;
         this.sendToRenderer(terminalId, data);
       }
-      
     } catch (error) {
       this.logger.error(`Failed to write to terminal ${terminalId}:`, error);
     }
@@ -211,7 +214,7 @@ export class WebTerminalManager {
 
   private executeCommand(terminalId: string, command: string, cwd: string): void {
     this.logger.debug(`Executing command directly: ${command}`);
-    
+
     // Handle built-in commands first
     if (command === 'clear') {
       // Clear terminal - we'll let the renderer handle this
@@ -219,7 +222,7 @@ export class WebTerminalManager {
       this.sendToRenderer(terminalId, '$ ');
       return;
     }
-    
+
     if (command.startsWith('cd ')) {
       const newPath = command.substring(3).trim() || os.homedir();
       const session = this.sessions.get(terminalId);
@@ -232,17 +235,18 @@ export class WebTerminalManager {
           } else {
             this.sendToRenderer(terminalId, `cd: ${newPath}: No such file or directory\r\n$ `);
           }
-        } catch (error) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
           this.sendToRenderer(terminalId, `cd: ${newPath}: Permission denied\r\n$ `);
         }
       }
       return;
     }
-    
+
     // Execute other commands using spawn
     const args = command.split(' ');
     const cmd = args.shift()!;
-    
+
     const childProcess = spawn(cmd, args, {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -252,18 +256,18 @@ export class WebTerminalManager {
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
       },
     });
-    
+
     let output = '';
-    
-    childProcess.stdout?.on('data', (data) => {
+
+    childProcess.stdout?.on('data', data => {
       output += data.toString();
     });
-    
-    childProcess.stderr?.on('data', (data) => {
+
+    childProcess.stderr?.on('data', data => {
       output += data.toString();
     });
-    
-    childProcess.on('close', (code) => {
+
+    childProcess.on('close', code => {
       if (output) {
         this.sendToRenderer(terminalId, output);
       }
@@ -272,8 +276,8 @@ export class WebTerminalManager {
       }
       this.sendToRenderer(terminalId, '$ ');
     });
-    
-    childProcess.on('error', (error) => {
+
+    childProcess.on('error', _error => {
       this.sendToRenderer(terminalId, `${cmd}: command not found\r\n$ `);
     });
   }
@@ -294,8 +298,11 @@ export class WebTerminalManager {
   }
 
   private sendToRenderer(terminalId: string, data: string): void {
-    this.logger.debug(`Sending data to renderer for ${terminalId}:`, data.slice(0, 50) + (data.length > 50 ? '...' : ''));
-    
+    this.logger.debug(
+      `Sending data to renderer for ${terminalId}:`,
+      data.slice(0, 50) + (data.length > 50 ? '...' : '')
+    );
+
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(`terminal:data:${terminalId}`, data);
     } else {

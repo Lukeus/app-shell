@@ -5,18 +5,20 @@ An enterprise-grade, cross-platform Electron application shell with extension su
 ## Preview
 
 ![App Shell Main Interface](screenshots/app-shell-main.png)
-*Main interface showing the welcome screen, sidebar, and terminal panel*
+_Main interface showing the welcome screen, sidebar, and terminal panel_
 
 <details>
 <summary>🖼️ More Screenshots</summary>
 
 ### Command Palette
+
 ![Command Palette](screenshots/app-shell-command-palette.png)
-*Built-in command palette with fuzzy search (Cmd+Shift+P / Ctrl+Shift+P)*
+_Built-in command palette with fuzzy search (Cmd+Shift+P / Ctrl+Shift+P)_
 
 ### Terminal Integration
+
 ![Terminal](screenshots/app-shell-terminal.png)
-*Integrated terminal with xterm.js and OS-native shell support*
+_Integrated terminal with xterm.js and OS-native shell support_
 
 </details>
 
@@ -249,6 +251,7 @@ test.describe('Feature Name', () => {
 #### CI/CD Integration
 
 Tests automatically run in CI with the following features:
+
 - Retry failed tests up to 2 times
 - Generate HTML and JUnit reports
 - Capture screenshots and videos on failure
@@ -270,6 +273,7 @@ pnpm dev  # DevTools can be toggled with F12 or Cmd+Opt+I
 ```
 
 **DevTools Shortcuts:**
+
 - **Toggle**: `F12` or `Cmd+Option+I` (macOS) / `Ctrl+Shift+I` (Windows/Linux)
 - **Inspect Element**: `Cmd+Shift+C` (macOS) / `Ctrl+Shift+C` (Windows/Linux)
 

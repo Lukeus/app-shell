@@ -94,7 +94,7 @@ export class CommandPalette {
 
     // Create results list
     this.resultsList = document.createElement('div');
-    this.resultsList.className = 'command-palette-results';
+    this.resultsList.className = 'command-results';
     this.resultsList.style.cssText = `
       max-height: 400px;
       overflow-y: auto;
@@ -153,7 +153,7 @@ export class CommandPalette {
 
     // Results list click events
     this.resultsList.addEventListener('click', e => {
-      const item = (e.target as Element).closest('.command-palette-item');
+      const item = (e.target as Element).closest('.command-item');
       if (item) {
         const index = parseInt(item.getAttribute('data-index') || '0', 10);
         this.selectedIndex = index;
@@ -284,7 +284,7 @@ export class CommandPalette {
 
     this.filteredCommands.forEach((command, index) => {
       const item = document.createElement('div');
-      item.className = `command-palette-item ${index === this.selectedIndex ? 'selected' : ''}`;
+      item.className = `command-item ${index === this.selectedIndex ? 'selected' : ''}`;
       item.setAttribute('data-index', index.toString());
 
       item.style.cssText = `
@@ -366,7 +366,7 @@ export class CommandPalette {
   }
 
   private updateSelection(): void {
-    const items = this.resultsList.querySelectorAll('.command-palette-item');
+    const items = this.resultsList.querySelectorAll('.command-item');
     items.forEach((item, index) => {
       const element = item as HTMLElement;
       if (index === this.selectedIndex) {
