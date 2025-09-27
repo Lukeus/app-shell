@@ -1,14 +1,14 @@
 # App Shell
 
-[![CI](https://github.com/your-org/app-shell/workflows/CI/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/ci.yml)
-[![Manual Release](https://github.com/your-org/app-shell/workflows/Manual%20Release/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/release.yml)
-[![CodeQL](https://github.com/your-org/app-shell/workflows/CodeQL/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/codeql.yml)
-[![Security](https://github.com/your-org/app-shell/workflows/Security/badge.svg)](https://github.com/your-org/app-shell/actions/workflows/security.yml)
+[![CI](https://github.com/Lukeus/app-shell/workflows/CI/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/ci.yml)
+[![Manual Release](https://github.com/Lukeus/app-shell/workflows/Manual%20Release/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/release.yml)
+[![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml)
+[![Security](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml)
 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/your-org/app-shell?sort=semver&logo=github)](https://github.com/your-org/app-shell/releases/latest)
-[![GitHub all releases](https://img.shields.io/github/downloads/your-org/app-shell/total?logo=github)](https://github.com/your-org/app-shell/releases)
-[![GitHub issues](https://img.shields.io/github/issues/your-org/app-shell?logo=github)](https://github.com/your-org/app-shell/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/your-org/app-shell?logo=github)](https://github.com/your-org/app-shell/pulls)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Lukeus/app-shell?sort=semver&logo=github)](https://github.com/Lukeus/app-shell/releases/latest)
+[![GitHub all releases](https://img.shields.io/github/downloads/Lukeus/app-shell/total?logo=github)](https://github.com/Lukeus/app-shell/releases)
+[![GitHub issues](https://img.shields.io/github/issues/Lukeus/app-shell?logo=github)](https://github.com/Lukeus/app-shell/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/Lukeus/app-shell?logo=github)](https://github.com/Lukeus/app-shell/pulls)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-191970?logo=electron&logoColor=white)](https://www.electronjs.org/)
@@ -19,7 +19,7 @@
 
 [![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron)](#getting-started)
 [![Architecture](https://img.shields.io/badge/Architecture-x64%20%7C%20ARM64-blue)](#getting-started)
-[![License](https://img.shields.io/github/license/your-org/app-shell?logo=open-source-initiative)](LICENSE)
+[![License](https://img.shields.io/github/license/Lukeus/app-shell?logo=open-source-initiative)](LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 An enterprise-grade, cross-platform Electron application shell with extension support - similar to VS Code but designed as a reusable template for building extensible desktop applications.
@@ -30,15 +30,15 @@ Comming soon.
 
 ## 📥 Download
 
-[![Latest Release](https://img.shields.io/github/v/release/your-org/app-shell?label=Download&logo=github&style=for-the-badge)](https://github.com/your-org/app-shell/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Lukeus/app-shell?label=Download&logo=github&style=for-the-badge)](https://github.com/Lukeus/app-shell/releases/latest)
 
 **Quick Downloads:**
 
-| Platform                                                                             | Package                                                                                                                                                                                                                                                             | Architecture |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white) | [.exe Installer](https://github.com/your-org/app-shell/releases/latest) • [.msi Package](https://github.com/your-org/app-shell/releases/latest)                                                                                                                     | x64, ARM64   |
-| ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)       | [.dmg Disk Image](https://github.com/your-org/app-shell/releases/latest) • [.zip Archive](https://github.com/your-org/app-shell/releases/latest)                                                                                                                    | x64, ARM64   |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)       | [.AppImage](https://github.com/your-org/app-shell/releases/latest) • [.deb](https://github.com/your-org/app-shell/releases/latest) • [.rpm](https://github.com/your-org/app-shell/releases/latest) • [.snap](https://github.com/your-org/app-shell/releases/latest) | x64, ARM64   |
+| Platform                                                                             | Package                                                                                                                                                                                                                                                     | Architecture |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white) | [.exe Installer](https://github.com/Lukeus/app-shell/releases/latest) • [.msi Package](https://github.com/Lukeus/app-shell/releases/latest)                                                                                                                 | x64, ARM64   |
+| ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)       | [.dmg Disk Image](https://github.com/Lukeus/app-shell/releases/latest) • [.zip Archive](https://github.com/Lukeus/app-shell/releases/latest)                                                                                                                | x64, ARM64   |
+| ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)       | [.AppImage](https://github.com/Lukeus/app-shell/releases/latest) • [.deb](https://github.com/Lukeus/app-shell/releases/latest) • [.rpm](https://github.com/Lukeus/app-shell/releases/latest) • [.snap](https://github.com/Lukeus/app-shell/releases/latest) | x64, ARM64   |
 
 > **Note:** Releases are automatically built and published when changes are pushed to the main branch. All packages are code-signed and verified.
 
@@ -374,7 +374,7 @@ sequenceDiagram
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/app-shell.git
+git clone https://github.com/Lukeus/app-shell.git
 cd app-shell
 
 # Install dependencies
@@ -507,12 +507,12 @@ sequenceDiagram
 
 #### Build Status
 
-| Component        | Status                                                                                                                                                        | Description                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **Linting**      | [![Lint Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=lint)](https://github.com/your-org/app-shell/actions)               | ESLint + Prettier code quality     |
-| **Build Matrix** | [![Build Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=build)](https://github.com/your-org/app-shell/actions)             | Cross-platform build verification  |
-| **Security**     | [![Security Status](https://img.shields.io/github/workflow/status/your-org/app-shell/Security?label=security)](https://github.com/your-org/app-shell/actions) | Dependency audit + CodeQL          |
-| **Release**      | [![Release Status](https://img.shields.io/github/workflow/status/your-org/app-shell/CI?label=release)](https://github.com/your-org/app-shell/releases)        | Automated packaging + distribution |
+| Component        | Status                                                                                                                                                    | Description                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **Linting**      | [![Lint Status](https://img.shields.io/github/workflow/status/Lukeus/app-shell/CI?label=lint)](https://github.com/Lukeus/app-shell/actions)               | ESLint + Prettier code quality     |
+| **Build Matrix** | [![Build Status](https://img.shields.io/github/workflow/status/Lukeus/app-shell/CI?label=build)](https://github.com/Lukeus/app-shell/actions)             | Cross-platform build verification  |
+| **Security**     | [![Security Status](https://img.shields.io/github/workflow/status/Lukeus/app-shell/Security?label=security)](https://github.com/Lukeus/app-shell/actions) | Dependency audit + CodeQL          |
+| **Release**      | [![Release Status](https://img.shields.io/github/workflow/status/Lukeus/app-shell/CI?label=release)](https://github.com/Lukeus/app-shell/releases)        | Automated packaging + distribution |
 
 > 💡 **Tip**: E2E tests run locally with `pnpm test` due to Electron's complexity in CI environments. All other quality checks are automated.
 
@@ -750,7 +750,7 @@ MIT License - see LICENSE file for details.
 
 - **Issues**: GitHub Issues
 - **Discussions**: GitHub Discussions
-- **Documentation**: [Wiki](https://github.com/your-org/app-shell/wiki)
+- **Documentation**: [Wiki](https://github.com/Lukeus/app-shell/wiki)
 
 ---
 

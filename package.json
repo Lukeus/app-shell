@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "An enterprise-grade, cross-platform Electron app shell with extension support",
   "main": "./dist/main/main.js",
-  "homepage": "https://github.com/your-org/app-shell",
+  "homepage": "https://github.com/Lukeus/app-shell",
   "scripts": {
     "build": "pnpm run build:main && pnpm run build:renderer && pnpm run build:preload",
     "build:main": "cross-env NODE_ENV=production webpack --config webpack.main.config.js",
@@ -148,11 +148,11 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/your-org/app-shell/issues"
+    "url": "https://github.com/Lukeus/app-shell/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/app-shell.git"
+    "url": "git+https://github.com/Lukeus/app-shell.git"
   },
   "engines": {
     "node": ">=16.15.0",
