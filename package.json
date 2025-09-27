@@ -51,7 +51,7 @@
   },
   "build": {
     "productName": "App Shell",
-    "appId": "com.yourorg.app-shell",
+    "appId": "com.lukeus.app-shell",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
@@ -142,9 +142,9 @@
     "typescript"
   ],
   "author": {
-    "name": "Your Organization",
-    "email": "contact@yourorg.com",
-    "url": "https://github.com/your-org"
+    "name": "Luke Adams",
+    "email": "luke@lukeus.dev",
+    "url": "https://github.com/Lukeus"
   },
   "license": "MIT",
   "bugs": {
