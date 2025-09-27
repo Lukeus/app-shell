@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Custom Properties for VS Code Theme */
+:root {
+  --color-vscode-bg-primary: #1e1e1e;
+  --color-vscode-bg-secondary: #252526;
+  --color-vscode-bg-tertiary: #2d2d30;
+  --color-vscode-bg-quaternary: #3e3e42;
+  --color-vscode-fg-primary: #d4d4d4;
+  --color-vscode-fg-secondary: #cccccc;
+  --color-vscode-fg-muted: #858585;
+  --color-vscode-fg-disabled: #6f6f6f;
+  --color-vscode-accent-blue: #007acc;
+  --color-vscode-accent-blue-dark: #005a9e;
+  --color-vscode-accent-blue-hover: #094771;
+  --color-vscode-border: #3e3e42;
+  --color-vscode-input-bg: #3c3c3c;
+  --color-vscode-input-border: #6c6c6c;
+
+  /* Terminal colors */
+  --color-terminal-bg: #1e1e1e;
+  --color-terminal-fg: #d4d4d4;
+  --color-terminal-cursor: #007acc;
+  --color-terminal-selection: #264f78;
+
+  /* Font families */
+  --font-family-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono:
+    'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Source Code Pro', 'Menlo', monospace;
+
+  /* Font sizes */
+  --font-size-xxs: 11px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+
+  /* Spacing */
+  --spacing-18: 4.5rem; /* 72px */
+  --spacing-22: 5.5rem; /* 88px */
+
+  /* Heights */
+  --height-title-bar: 30px;
+  --height-status-bar: 22px;
+  --height-sidebar-header: 35px;
+  --height-panel-header: 32px;
+  --height-activity-item: 48px;
+
+  /* Widths */
+  --width-activity-bar: 48px;
+  --width-sidebar: 320px;
+
+  /* Animation */
+  --animate-fade-in: fade-in 0.2s ease-in;
+  --animate-slide-in: slide-in 0.3s ease-out;
+
+  /* Keyframes */
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+}
+
+/* Base styles using standard CSS */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--color-vscode-bg-primary);
+  color: var(--color-vscode-fg-primary);
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus states */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-vscode-accent-blue);
+}
+
+/* Component styles */
+.activity-item {
+  position: relative;
+  width: var(--width-activity-bar);
+  height: var(--height-activity-item);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-vscode-fg-muted);
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+}
+
+.activity-item:hover {
+  color: white;
+  background-color: var(--color-vscode-bg-quaternary);
+}
+
+.activity-item.active {
+  color: white;
+  background-color: var(--color-vscode-accent-blue-hover);
+}
+
+.activity-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--color-vscode-accent-blue);
+}
+
+.sidebar-action {
+  background: transparent;
+  border: none;
+  color: var(--color-vscode-fg-muted);
+  cursor: pointer;
+  padding: 2px;
+  font-size: var(--font-size-xs);
+  transition: color 0.2s ease;
+}
+
+.sidebar-action:hover {
+  color: white;
+}
+
+.panel-tab {
+  padding: 6px 16px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-vscode-fg-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-right: 4px;
+  transition: all 0.2s ease;
+}
+
+.panel-tab:hover {
+  background: #404040;
+  color: white;
+}
+
+.panel-tab.active {
+  background: var(--color-vscode-accent-blue);
+  border-color: var(--color-vscode-accent-blue);
+  color: white;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.status-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.setting-input {
+  padding: 4px 8px;
+  background-color: var(--color-vscode-input-bg);
+  border: 1px solid var(--color-vscode-input-border);
+  border-radius: 3px;
+  color: var(--color-vscode-fg-secondary);
+  font-size: var(--font-size-xxs);
+  width: 120px;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: var(--color-vscode-accent-blue);
+}
+
+/* Utility classes */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag-region {
+  -webkit-app-region: no-drag;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}

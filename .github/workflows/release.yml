@@ -1,33 +1,69 @@
-name: Release
+name: Manual Release
 
 on:
+  # Keep manual tag-based releases for hotfixes or manual releases
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*-hotfix*'
+      - 'v*.*.*-manual*'
+  # Allow manual releases via workflow dispatch
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v1.0.0)'
+        description: 'Release version (e.g., v1.0.0, v1.0.0-beta.1)'
         required: true
         type: string
+      create_tag:
+        description: 'Create git tag for this release'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   prepare:
-    name: Prepare Release
+    name: Prepare Manual Release
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version.outputs.version }}
+      should_create_tag: ${{ steps.get-version.outputs.should_create_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version
+      - name: Get version and prepare tag
         id: get-version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            VERSION="${{ inputs.version }}"
+            CREATE_TAG="${{ inputs.create_tag }}"
+            echo "Manual release requested: $VERSION"
+            
+            # Create tag if requested
+            if [ "$CREATE_TAG" = "true" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              
+              # Update package.json version (remove v prefix if present)
+              CLEAN_VERSION=${VERSION#v}
+              npm version $CLEAN_VERSION --no-git-tag-version
+              git add package.json
+              git commit -m "chore: bump version to $CLEAN_VERSION for manual release [skip ci]"
+              git tag -a $VERSION -m "Manual Release $VERSION"
+              git push origin main
+              git push origin $VERSION
+            fi
+            
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "should_create_tag=false" >> $GITHUB_OUTPUT
           else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            # Tag-based release
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "Tag-based release: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "should_create_tag=false" >> $GITHUB_OUTPUT
           fi
 
   build-and-release:

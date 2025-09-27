@@ -17,6 +17,8 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "jsx": "react-jsx",
+    "allowJs": true,
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
