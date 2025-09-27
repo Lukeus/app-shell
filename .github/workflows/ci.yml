@@ -305,7 +305,7 @@ jobs:
 
           # Get the latest tag
           git fetch --tags
-          LATEST_TAG=$(git describe --tags --abbrev=0)
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           VERSION=${LATEST_TAG#v}
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -321,7 +321,14 @@ jobs:
 
           # Get the latest tag
           git fetch --tags
-          $LATEST_TAG = git describe --tags --abbrev=0
+          try {
+            $LATEST_TAG = git describe --tags --abbrev=0 2>$null
+          } catch {
+            $LATEST_TAG = "v0.0.0"
+          }
+          if (-not $LATEST_TAG) {
+            $LATEST_TAG = "v0.0.0"
+          }
           $VERSION = $LATEST_TAG -replace '^v', ''
 
           echo "version=$VERSION" >> $env:GITHUB_OUTPUT
@@ -406,7 +413,7 @@ jobs:
         id: get-tag
         run: |
           git fetch --tags
-          LATEST_TAG=$(git describe --tags --abbrev=0)
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           VERSION=${LATEST_TAG#v}
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
