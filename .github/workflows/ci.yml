@@ -56,15 +56,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Install system dependencies (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          # Install dependencies with proper Electron handling
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            # Install minimal system deps for Ubuntu
-            sudo apt-get update -qq
-            sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libgtk-3-0
-          fi
-          pnpm install --frozen-lockfile
+          sudo apt-get update -qq
+          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libgtk-3-0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build application
         run: |
@@ -122,13 +121,13 @@ jobs:
         run: |
           # Force download Electron binary
           pnpm exec electron --version || echo "Electron binary not found, attempting to fix..."
-          
+
           # Clear potential corrupt Electron installation
           rm -rf node_modules/.pnpm/electron*/node_modules/electron/dist || true
-          
+
           # Reinstall Electron with specific flags
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true pnpm rebuild electron
-          
+
           # Verify installation
           pnpm exec electron --version
 
