@@ -97,6 +97,32 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', '*.js', '**/*.d.ts', 'webpack.*.config.js'],
+    files: ['scripts/**/*.js', '*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+      },
+    },
+    rules: {
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'no-undef': 'error',
+    },
+  },
+  {
+    ignores: ['node_modules/**', 'dist/**', '**/*.d.ts', 'webpack.*.config.js'],
   },
 ];
