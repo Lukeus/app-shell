@@ -61,12 +61,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: TruffleHog OSS
+      - name: TruffleHog OSS (Push to main - full scan)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          extra_args: --debug --only-verified
+
+      - name: TruffleHog OSS (Pull Request - differential scan)
+        if: github.event_name == 'pull_request'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+          extra_args: --debug --only-verified
+
+      - name: TruffleHog OSS (Push to develop - differential scan)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: origin/main
           head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: TruffleHog OSS (Scheduled scan - full repo)
+        if: github.event_name == 'schedule'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
           extra_args: --debug --only-verified
 
   license-compliance:
