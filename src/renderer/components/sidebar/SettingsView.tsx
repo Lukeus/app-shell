@@ -9,7 +9,8 @@ export const SettingsView: React.FC = () => {
     // Load current theme from electron
     const loadCurrentTheme = async () => {
       try {
-        const currentTheme = (await window.electronAPI?.getSetting('theme')) || 'builtin.dark';
+        const currentTheme =
+          ((await window.electronAPI?.getSetting('theme')) as string) || 'builtin.dark';
         dispatch({ type: 'SET_THEME', payload: currentTheme });
       } catch (error) {
         console.error('Failed to load current theme:', error);

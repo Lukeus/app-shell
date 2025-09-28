@@ -1,0 +1,332 @@
+/* File Explorer Styles */
+
+/* Override some default VS Code theme variables for file explorer */
+:root {
+  --color-vscode-selection: rgba(86, 156, 214, 0.25);
+  --color-vscode-hover: rgba(255, 255, 255, 0.1);
+  --color-vscode-drag-over: rgba(86, 156, 214, 0.15);
+  --color-vscode-accent: #569cd6;
+  --color-vscode-input: #3c3c3c;
+  --color-vscode-input-border: #6c6c6c;
+  --color-vscode-fg-primary: #cccccc;
+  --color-vscode-fg-secondary: #969696;
+  --color-vscode-fg-muted: #6a6a6a;
+  --color-vscode-bg-primary: #1e1e1e;
+  --color-vscode-bg-secondary: #252526;
+  --color-vscode-bg-tertiary: #2d2d30;
+  --color-vscode-border: #3e3e42;
+}
+
+/* File tree item styles */
+.file-tree-item {
+  @apply transition-colors duration-150 ease-in-out;
+}
+
+.file-tree-item:hover {
+  background-color: var(--color-vscode-hover);
+}
+
+.file-tree-item.selected {
+  background-color: var(--color-vscode-selection);
+}
+
+.file-tree-item.drag-over {
+  background-color: var(--color-vscode-drag-over);
+  border-left: 2px solid var(--color-vscode-accent);
+}
+
+/* File icons with proper spacing */
+.file-icon {
+  @apply inline-flex items-center justify-center;
+  width: 16px;
+  height: 16px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Expand/collapse arrow animation */
+.expand-arrow {
+  @apply transition-transform duration-150 ease-in-out;
+  transform-origin: center;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* File name truncation */
+.file-name {
+  @apply truncate;
+  max-width: calc(100% - 80px); /* Account for icon and size */
+}
+
+/* File size display */
+.file-size {
+  @apply text-xs opacity-70;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Hidden file styling */
+.file-hidden {
+  @apply opacity-60;
+}
+
+.file-hidden .file-name {
+  font-style: italic;
+}
+
+/* Input field styling for rename */
+.rename-input {
+  @apply bg-transparent border border-solid rounded px-1 text-sm;
+  background-color: var(--color-vscode-input);
+  border-color: var(--color-vscode-input-border);
+  color: var(--color-vscode-fg-primary);
+  outline: none;
+}
+
+.rename-input:focus {
+  border-color: var(--color-vscode-accent);
+  box-shadow: 0 0 0 1px var(--color-vscode-accent);
+}
+
+/* Context menu styling */
+.context-menu {
+  @apply fixed z-50 min-w-48 py-1 rounded-md shadow-lg border;
+  background-color: var(--color-vscode-bg-secondary);
+  border-color: var(--color-vscode-border);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.context-menu-item {
+  @apply flex items-center justify-between px-3 py-1.5 text-sm cursor-pointer;
+  color: var(--color-vscode-fg-primary);
+}
+
+.context-menu-item:hover:not(.disabled) {
+  background-color: var(--color-vscode-hover);
+}
+
+.context-menu-item.disabled {
+  color: var(--color-vscode-fg-muted);
+  cursor: not-allowed;
+}
+
+.context-menu-separator {
+  @apply h-px mx-1 my-1;
+  background-color: var(--color-vscode-border);
+}
+
+/* Explorer header styles */
+.explorer-header {
+  @apply flex items-center justify-between px-2 py-1 border-b;
+  border-color: var(--color-vscode-border);
+  background-color: var(--color-vscode-bg-tertiary);
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.explorer-header button {
+  @apply text-xs px-1 py-0.5 rounded transition-colors duration-150;
+  color: var(--color-vscode-fg-secondary);
+}
+
+.explorer-header button:hover {
+  background-color: var(--color-vscode-hover);
+  color: var(--color-vscode-fg-primary);
+}
+
+.explorer-header button.active {
+  background-color: var(--color-vscode-accent);
+  color: white;
+}
+
+/* Directory path button */
+.directory-path {
+  @apply flex items-center text-xs truncate max-w-32;
+  color: var(--color-vscode-fg-secondary);
+}
+
+.directory-path:hover {
+  color: var(--color-vscode-fg-primary);
+}
+
+/* Loading and error states */
+.explorer-loading {
+  @apply flex items-center justify-center h-32 text-sm;
+  color: var(--color-vscode-fg-muted);
+}
+
+.explorer-error {
+  @apply p-4 text-center text-sm;
+  color: #f48771; /* VS Code error color */
+}
+
+.explorer-empty {
+  @apply p-4 text-center text-sm;
+  color: var(--color-vscode-fg-muted);
+}
+
+/* Custom scrollbar for file tree */
+.file-tree-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-vscode-border) transparent;
+}
+
+.file-tree-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.file-tree-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-tree-container::-webkit-scrollbar-thumb {
+  background: var(--color-vscode-border);
+  border-radius: 5px;
+}
+
+.file-tree-container::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vscode-fg-muted);
+}
+
+/* File type specific styling */
+.file-javascript,
+.file-typescript {
+  font-weight: 500;
+}
+
+.file-json {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.file-markdown {
+  color: #569cd6;
+}
+
+.file-image {
+  color: #4ec9b0;
+}
+
+.file-executable {
+  font-weight: 600;
+  color: #dcdcaa;
+}
+
+/* Special folder styling */
+.git-folder,
+.vscode-folder {
+  font-weight: 500;
+}
+
+.node-folder {
+  opacity: 0.8;
+}
+
+.test-folder,
+.spec-folder {
+  color: #ce9178;
+}
+
+/* Drag and drop visual feedback */
+.drag-ghost {
+  @apply opacity-50 pointer-events-none;
+}
+
+.drop-zone {
+  @apply relative;
+}
+
+.drop-zone::after {
+  content: '';
+  @apply absolute inset-0 border-2 border-dashed pointer-events-none opacity-0 transition-opacity duration-200;
+  border-color: var(--color-vscode-accent);
+}
+
+.drop-zone.drag-over::after {
+  @apply opacity-100;
+}
+
+/* Keyboard focus indicators */
+.file-tree-item:focus {
+  outline: 1px solid var(--color-vscode-accent);
+  outline-offset: -1px;
+}
+
+.file-tree-item:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Animation for expanding/collapsing */
+.collapse-enter {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+}
+
+.collapse-enter-active {
+  overflow: hidden;
+  max-height: 1000px;
+  opacity: 1;
+  transition:
+    max-height 0.3s ease-out,
+    opacity 0.2s ease-out;
+}
+
+.collapse-exit {
+  overflow: hidden;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.collapse-exit-active {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.3s ease-in,
+    opacity 0.2s ease-in;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .file-name {
+    max-width: calc(100% - 60px);
+  }
+
+  .file-size {
+    display: none;
+  }
+
+  .context-menu {
+    min-width: 160px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-vscode-selection: rgba(86, 156, 214, 0.4);
+    --color-vscode-hover: rgba(255, 255, 255, 0.2);
+    --color-vscode-border: #6c6c6c;
+  }
+
+  .file-tree-item:focus {
+    outline-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .expand-arrow,
+  .file-tree-item,
+  .context-menu-item {
+    transition: none;
+  }
+
+  .collapse-enter-active,
+  .collapse-exit-active {
+    transition: none;
+  }
+}

@@ -4,9 +4,13 @@ import { ActivityBar } from './components/ActivityBar';
 import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { StatusBar } from './components/StatusBar';
+import { CommandPalette } from './components/CommandPalette';
 import { AppProvider } from './context/AppContext';
+import { useCommandPalette } from './hooks/useCommandPalette';
 
 const App: React.FC = () => {
+  const commandPalette = useCommandPalette();
+
   return (
     <AppProvider>
       <div className="h-screen flex flex-col bg-vscode-bg-primary text-vscode-fg-primary">
@@ -27,6 +31,9 @@ const App: React.FC = () => {
 
         {/* Status Bar */}
         <StatusBar />
+
+        {/* Command Palette */}
+        <CommandPalette isVisible={commandPalette.isVisible} onClose={commandPalette.hide} />
       </div>
     </AppProvider>
   );
