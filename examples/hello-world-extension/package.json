@@ -2,28 +2,46 @@
   "name": "hello-world",
   "displayName": "Hello World Extension",
   "version": "1.0.0",
-  "description": "A simple example extension for App Shell",
-  "main": "extension.js",
+  "description": "A TypeScript example extension for App Shell demonstrating the extension API",
+  "main": "./out/extension.js",
   "author": "App Shell Team",
   "license": "MIT",
   "engines": {
     "app-shell": "^1.0.0"
   },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "prepublish": "pnpm run build"
+  },
   "activationEvents": [
-    "onCommand:helloWorld.sayHello",
-    "*"
+    "onStartup"
   ],
   "contributes": {
     "commands": [
       {
         "command": "helloWorld.sayHello",
         "title": "Say Hello",
-        "category": "Hello World"
+        "category": "Hello World",
+        "icon": "$(megaphone)"
       },
       {
         "command": "helloWorld.showInfo",
         "title": "Show Extension Info",
-        "category": "Hello World"
+        "category": "Hello World",
+        "icon": "$(info)"
+      },
+      {
+        "command": "helloWorld.getCurrentTime",
+        "title": "Get Current Time",
+        "category": "Hello World",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "helloWorld.toggleTheme",
+        "title": "Toggle Hello World Theme",
+        "category": "Hello World",
+        "icon": "$(color-mode)"
       }
     ],
     "themes": [
@@ -47,7 +65,38 @@
         "default": true,
         "title": "Show Timestamp",
         "description": "Whether to show timestamp in greetings"
+      },
+      {
+        "key": "helloWorld.enableNotifications",
+        "type": "boolean",
+        "default": true,
+        "title": "Enable Notifications",
+        "description": "Show notification messages for extension actions"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "helloWorld.sayHello",
+        "key": "Ctrl+Shift+H",
+        "mac": "Cmd+Shift+H",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "helloWorld.getCurrentTime",
+        "key": "Ctrl+Shift+T",
+        "mac": "Cmd+Shift+T"
       }
     ]
-  }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "app-shell",
+    "extension",
+    "sample",
+    "hello-world",
+    "typescript"
+  ]
 }

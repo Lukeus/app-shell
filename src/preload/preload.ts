@@ -1,15 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import {
+  TerminalOptions,
+  MarketplacePlugin,
+  Extension,
+  Theme,
+  CommandRegistration,
+  SettingsValue,
+} from '../schemas';
+import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
 
 // Define the API interface
-interface TerminalOptions {
-  shell?: string;
-  args?: string[];
-  cwd?: string;
-  env?: Record<string, string>;
-  cols?: number;
-  rows?: number;
-}
-
 interface TerminalInfo {
   id: string;
   title: string;
@@ -29,9 +29,9 @@ interface ElectronAPI {
   windowControl: (action: string) => void;
 
   // Settings
-  getSetting: (key: string) => Promise<unknown>;
-  setSetting: (key: string, value: unknown) => Promise<void>;
-  getAllSettings: () => Promise<Record<string, unknown>>;
+  getSetting: (key: string) => Promise<SettingsValue>;
+  setSetting: (key: string, value: SettingsValue) => Promise<void>;
+  getAllSettings: () => Promise<Record<string, SettingsValue>>;
 
   // Terminal
   createTerminal: (options?: TerminalOptions) => Promise<TerminalInfo>;
@@ -41,23 +41,27 @@ interface ElectronAPI {
   onTerminalData: (terminalId: string, callback: (data: string) => void) => void;
 
   // Extensions
-  getExtensions: () => Promise<any[]>;
+  getExtensions: () => Promise<Extension[]>;
   enableExtension: (extensionId: string) => Promise<void>;
   disableExtension: (extensionId: string) => Promise<void>;
-  installExtension: (extensionPath: string) => Promise<any>;
+  installExtension: (extensionPath: string) => Promise<Extension>;
   uninstallExtension: (extensionId: string) => Promise<void>;
 
   // Themes
-  getThemes: () => Promise<any[]>;
+  getThemes: () => Promise<Theme[]>;
   applyTheme: (themeId: string) => Promise<void>;
 
   // Commands
   executeCommand: (commandId: string, ...args: unknown[]) => Promise<unknown>;
-  getAllCommands: () => Promise<any[]>;
+  getAllCommands: () => Promise<CommandRegistration[]>;
+
+  // Command palette events
+  onCommandPaletteToggle?: (callback: () => void) => void;
+  removeCommandPaletteListener?: (callback: () => void) => void;
 
   // File system
-  showOpenDialog: (options: unknown) => Promise<any>;
-  showSaveDialog: (options: unknown) => Promise<any>;
+  showOpenDialog: (options: Electron.OpenDialogOptions) => Promise<Electron.OpenDialogReturnValue>;
+  showSaveDialog: (options: Electron.SaveDialogOptions) => Promise<Electron.SaveDialogReturnValue>;
 
   // File system operations
   readFile: (filePath: string) => Promise<Uint8Array>;
@@ -68,9 +72,9 @@ interface ElectronAPI {
   deleteFile: (filePath: string) => Promise<void>;
   deleteDirectory: (dirPath: string) => Promise<void>;
   exists: (filePath: string) => Promise<boolean>;
-  stat: (filePath: string) => Promise<any>;
-  readDirectory: (dirPath: string) => Promise<[string, number][]>;
-  getFileTree: (rootPath: string, depth?: number) => Promise<any>;
+  stat: (filePath: string) => Promise<import('../types').FileStat>;
+  readDirectory: (dirPath: string) => Promise<[string, import('../types').FileType][]>;
+  getFileTree: (rootPath: string, depth?: number) => Promise<unknown>;
   rename: (oldPath: string, newPath: string) => Promise<void>;
   copyFile: (sourcePath: string, targetPath: string) => Promise<void>;
   getHomeDirectory: () => Promise<string>;
@@ -87,15 +91,17 @@ interface ElectronAPI {
   restartApp: () => void;
 
   // Marketplace
-  searchMarketplacePlugins: (query: unknown) => Promise<any>;
-  getMarketplacePlugin: (pluginId: string) => Promise<any>;
-  getMarketplaceCategories: () => Promise<any[]>;
+  searchMarketplacePlugins: (query: unknown) => Promise<MarketplaceSearchResult>;
+  getMarketplacePlugin: (pluginId: string) => Promise<MarketplacePlugin | null>;
+  getMarketplaceCategories: () => Promise<MarketplaceCategory[]>;
   installMarketplacePlugin: (pluginId: string, version?: string) => Promise<void>;
   updateMarketplacePlugin: (pluginId: string) => Promise<void>;
   uninstallMarketplacePlugin: (pluginId: string) => Promise<void>;
-  getInstalledPlugins: () => Promise<any[]>;
-  checkPluginUpdates: () => Promise<any[]>;
-  getPluginInstallationStatus: (pluginId: string) => Promise<any>;
+  getInstalledPlugins: () => Promise<MarketplacePlugin[]>;
+  checkPluginUpdates: () => Promise<import('../types').PluginUpdate[]>;
+  getPluginInstallationStatus: (
+    pluginId: string
+  ) => Promise<{ status: string; progress: number; error?: string }>;
 }
 
 // Create the API object
@@ -117,7 +123,7 @@ const electronAPI: ElectronAPI = {
 
   // Settings
   getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
-  setSetting: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
+  setSetting: (key: string, value: SettingsValue) => ipcRenderer.invoke('settings:set', key, value),
   getAllSettings: () => ipcRenderer.invoke('settings:getAll'),
 
   // Terminal
@@ -155,9 +161,19 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('command:execute', commandId, ...args),
   getAllCommands: () => ipcRenderer.invoke('command:getAllCommands'),
 
+  // Command palette toggle events from main
+  onCommandPaletteToggle: (callback: () => void) => {
+    ipcRenderer.on('commandPalette:toggle', callback);
+  },
+  removeCommandPaletteListener: (callback: () => void) => {
+    ipcRenderer.removeListener('commandPalette:toggle', callback);
+  },
+
   // File system
-  showOpenDialog: (options: unknown) => ipcRenderer.invoke('fs:showOpenDialog', options),
-  showSaveDialog: (options: unknown) => ipcRenderer.invoke('fs:showSaveDialog', options),
+  showOpenDialog: (options: Electron.OpenDialogOptions) =>
+    ipcRenderer.invoke('fs:showOpenDialog', options),
+  showSaveDialog: (options: Electron.SaveDialogOptions) =>
+    ipcRenderer.invoke('fs:showSaveDialog', options),
 
   // File system operations
   readFile: (filePath: string) => ipcRenderer.invoke('filesystem:readFile', filePath),

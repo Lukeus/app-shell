@@ -51,7 +51,10 @@ export class MarketplaceService implements IMarketplaceService {
       this.logger.info('Initializing Marketplace Service...');
 
       // Load custom registries from settings
-      const customRegistries = (await this.settingsManager.get('marketplace.registries')) || [];
+      const registriesValue = await this.settingsManager.get('marketplace.registries');
+      const customRegistries = Array.isArray(registriesValue)
+        ? (registriesValue as MarketplaceRegistry[])
+        : [];
       this.registries = [...this.registries, ...customRegistries];
 
       // Sync plugin metadata from registries
@@ -388,7 +391,19 @@ export class MarketplaceService implements IMarketplaceService {
       // Convert marketplace plugin to extension format and install
       const extension = this.convertToExtension(plugin);
       await this.createExtensionFiles(extension);
-      await this.extensionManager.activateExtension(extension.id);
+
+      // For theme plugins, just install without module activation
+      if (plugin.category === 'themes') {
+        await this.extensionManager.installExtension(
+          path.join(app.getPath('userData'), 'extensions', extension.id)
+        );
+      } else {
+        // For regular plugins, load and activate the extension
+        await this.extensionManager.installExtension(
+          path.join(app.getPath('userData'), 'extensions', extension.id)
+        );
+        await this.extensionManager.activateExtension(extension.id);
+      }
 
       installation.status = 'completed';
       installation.progress = 100;
@@ -600,22 +615,28 @@ export class MarketplaceService implements IMarketplaceService {
     );
 
     // Create minimal extension.js
-    const extensionCode = `
-// Generated extension file for ${extension.name}
-const vscode = require('app-shell');
+    const extensionCode = `// Generated extension file for ${extension.name}
 
+// Extension API is provided globally by the extension system
 function activate(context) {
     console.log('Extension "${extension.name}" is now active!');
+    
+    // Register theme contribution if it exists
+    if (context && context.subscriptions) {
+        const themeDisposable = {
+            dispose: () => {
+                console.log('Theme "${extension.name}" is now deactivated!');
+            }
+        };
+        context.subscriptions.push(themeDisposable);
+    }
 }
 
 function deactivate() {
     console.log('Extension "${extension.name}" is now deactivated!');
 }
 
-module.exports = {
-    activate,
-    deactivate
-};
+module.exports = { activate, deactivate };
 `;
 
     fs.writeFileSync(path.join(extensionPath, 'extension.js'), extensionCode, 'utf8');
@@ -629,9 +650,24 @@ module.exports = {
         colors: {
           'app.background': '#1e1e1e',
           'app.foreground': '#d4d4d4',
+          'app.border': '#2d2d30',
           'panel.background': '#252526',
+          'panel.foreground': '#cccccc',
           'terminal.background': '#1e1e1e',
           'terminal.foreground': '#d4d4d4',
+          'button.background': '#0e639c',
+          'button.foreground': '#ffffff',
+          'button.hoverBackground': '#1177bb',
+          'input.background': '#3c3c3c',
+          'input.foreground': '#cccccc',
+          'input.border': '#6c6c6c',
+          'sideBar.background': '#252526',
+          'sideBar.foreground': '#cccccc',
+          'sideBar.border': '#2d2d30',
+          'tab.activeBackground': '#1e1e1e',
+          'tab.activeForeground': '#ffffff',
+          'tab.inactiveBackground': '#2d2d2d',
+          'tab.inactiveForeground': '#8f8f8f',
         },
       };
 
