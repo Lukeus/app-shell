@@ -55,7 +55,7 @@ export class Logger {
     }
   }
 
-  private formatMessage(level: string, message: string, ...args: any[]): string {
+  private formatMessage(level: string, message: string, ...args: unknown[]): string {
     const timestamp = new Date().toISOString();
     const formattedMessage =
       args.length > 0
@@ -65,7 +65,7 @@ export class Logger {
     return `[${timestamp}] [${level}] [${this.context}] ${formattedMessage}`;
   }
 
-  private writeToFile(level: string, message: string, ...args: any[]): void {
+  private writeToFile(level: string, message: string, ...args: unknown[]): void {
     if (!this.logFile) return;
 
     try {
@@ -76,28 +76,28 @@ export class Logger {
     }
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.Debug) {
       console.debug(this.formatMessage('DEBUG', message, ...args));
       this.writeToFile('DEBUG', message, ...args);
     }
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.Info) {
       console.info(this.formatMessage('INFO', message, ...args));
       this.writeToFile('INFO', message, ...args);
     }
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.Warning) {
       console.warn(this.formatMessage('WARN', message, ...args));
       this.writeToFile('WARN', message, ...args);
     }
   }
 
-  error(message: string | Error, ...args: any[]): void {
+  error(message: string | Error, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.Error) {
       const errorMessage = message instanceof Error ? message.message : message;
       const errorStack = message instanceof Error ? message.stack : undefined;

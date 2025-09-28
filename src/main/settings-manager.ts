@@ -2,10 +2,11 @@ import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Logger } from './logger';
+import { SettingsValue } from '../schemas';
 
 export class SettingsManager {
   private logger: Logger;
-  private settings: Map<string, any>;
+  private settings: Map<string, SettingsValue>;
   private settingsPath: string;
 
   constructor() {
@@ -28,10 +29,10 @@ export class SettingsManager {
     try {
       if (fs.existsSync(this.settingsPath)) {
         const data = fs.readFileSync(this.settingsPath, 'utf8');
-        const parsed = JSON.parse(data);
+        const parsed = JSON.parse(data) as Record<string, SettingsValue>;
 
         for (const [key, value] of Object.entries(parsed)) {
-          this.settings.set(key, value);
+          this.settings.set(key, value as SettingsValue);
         }
 
         this.logger.debug('Settings loaded from file');
@@ -70,17 +71,29 @@ export class SettingsManager {
     await this.saveSettings();
   }
 
-  async get(key: string): Promise<any> {
-    return this.settings.get(key);
+  async get<T extends SettingsValue = SettingsValue>(key: string): Promise<T | undefined> {
+    return this.settings.get(key) as T | undefined;
   }
 
-  async set(key: string, value: any): Promise<void> {
-    this.settings.set(key, value);
-    await this.saveSettings();
+  async set(key: string, value: SettingsValue): Promise<void> {
+    // Validate value is a valid SettingsValue
+    if (
+      value === null ||
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      Array.isArray(value) ||
+      (typeof value === 'object' && value !== null)
+    ) {
+      this.settings.set(key, value);
+      await this.saveSettings();
+    } else {
+      throw new Error(`Invalid settings value type for key: ${key}`);
+    }
   }
 
-  async getAll(): Promise<Record<string, any>> {
-    const result: Record<string, any> = {};
+  async getAll(): Promise<Record<string, SettingsValue>> {
+    const result: Record<string, SettingsValue> = {};
     for (const [key, value] of this.settings.entries()) {
       result[key] = value;
     }
@@ -89,7 +102,7 @@ export class SettingsManager {
 
   private async saveSettings(): Promise<void> {
     try {
-      const settingsObj: Record<string, any> = {};
+      const settingsObj: Record<string, SettingsValue> = {};
       for (const [key, value] of this.settings.entries()) {
         settingsObj[key] = value;
       }

@@ -5,7 +5,7 @@ import { Logger } from './logger';
 
 export class TerminalManager {
   private logger: Logger;
-  private terminals: Map<string, any>;
+  private terminals: Map<string, { terminal: TerminalInstance; ptyProcess: unknown }>;
   private terminalCounter: number;
 
   constructor() {

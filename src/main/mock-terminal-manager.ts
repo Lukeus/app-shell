@@ -6,6 +6,7 @@
  */
 
 import { Logger } from './logger';
+import { TerminalOptions } from '../schemas';
 
 export class MockTerminalManager {
   private logger: Logger;
@@ -15,13 +16,17 @@ export class MockTerminalManager {
     this.logger.info('Using mock terminal manager (node-pty not available)');
   }
 
-  async createTerminal(_options?: any): Promise<{ id: string; pid: number }> {
+  async createTerminal(
+    _options?: TerminalOptions
+  ): Promise<{ id: string; pid: number; title: string; cwd: string }> {
     const terminalId = `mock-terminal-${Date.now()}`;
     this.logger.info(`Mock terminal created: ${terminalId}`);
 
     return {
       id: terminalId,
       pid: 12345, // Mock PID
+      title: 'Mock Terminal',
+      cwd: process.cwd(),
     };
   }
 

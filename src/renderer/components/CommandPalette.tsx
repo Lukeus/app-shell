@@ -183,18 +183,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isVisible, onClo
   );
 
   // Execute selected command
-  const executeSelected = useCallback(async () => {
+  const executeSelected = useCallback(() => {
     const selectedCommand = filteredCommands[selectedIndex];
     if (!selectedCommand) return;
 
-    onClose();
+    // Execute command first
+    window.electronAPI?.executeCommand(selectedCommand.command);
 
-    try {
-      await window.electronAPI?.executeCommand(selectedCommand.command);
-    } catch (error) {
-      console.error('Failed to execute command:', error);
-      // You could add a toast notification here
-    }
+    // Then close palette
+    onClose();
   }, [filteredCommands, selectedIndex, onClose]);
 
   // Handle command click

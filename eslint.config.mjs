@@ -123,6 +123,13 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', '**/*.d.ts', 'webpack.*.config.js'],
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '**/*.d.ts',
+      'webpack.*.config.js',
+      'examples/**/out/**',
+      'src/types/**/*.js', // Exclude compiled TypeScript files
+    ],
   },
 ];

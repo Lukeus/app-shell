@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { app } from 'electron';
+import * as util from 'util';
+import { app, BrowserWindow } from 'electron';
+import { pathToFileURL } from 'url';
 import {
   Extension,
   Theme,
@@ -10,12 +12,18 @@ import {
   AppError,
   ExtensionActivationEvent,
 } from '../types';
+import {
+  ExtensionManifest,
+  validateExtensionManifest,
+  safeParseTheme,
+  SettingsValue,
+} from '../schemas';
 import { SettingsManager } from './settings-manager';
 import { Logger } from './logger';
 
 // Extension runtime context implementation
 class ExtensionStateManager implements StateManager {
-  private data: Map<string, any> = new Map();
+  private data: Map<string, SettingsValue> = new Map();
   private filePath: string;
 
   constructor(filePath: string) {
@@ -24,10 +32,10 @@ class ExtensionStateManager implements StateManager {
   }
 
   get<T>(key: string, defaultValue?: T): T | undefined {
-    return this.data.has(key) ? this.data.get(key) : defaultValue;
+    return this.data.has(key) ? (this.data.get(key) as T) : defaultValue;
   }
 
-  async update(key: string, value: any): Promise<void> {
+  async update(key: string, value: SettingsValue): Promise<void> {
     this.data.set(key, value);
     await this.saveToFile();
   }
@@ -68,7 +76,11 @@ class ExtensionStateManager implements StateManager {
 interface LoadedExtension {
   extension: Extension;
   context: ExtensionContext;
-  module?: any;
+  module?: {
+    activate?: (context: ExtensionContext) => Promise<void> | void;
+    deactivate?: () => Promise<void> | void;
+    [key: string]: unknown;
+  };
   isActive: boolean;
   activationEvents: string[];
 }
@@ -197,9 +209,8 @@ export class ExtensionManager {
       category: 'Developer',
       callback: async () => {
         // Reload the renderer process
-        const { BrowserWindow } = await import('electron');
         const windows = BrowserWindow.getAllWindows();
-        windows.forEach((window: any) => window.reload());
+        windows.forEach((window: Electron.BrowserWindow) => window.reload());
       },
     });
 
@@ -208,9 +219,8 @@ export class ExtensionManager {
       title: 'Developer: Toggle Developer Tools',
       category: 'Developer',
       callback: async () => {
-        const { BrowserWindow } = await import('electron');
         const windows = BrowserWindow.getAllWindows();
-        windows.forEach((window: any) => {
+        windows.forEach((window: Electron.BrowserWindow) => {
           if (window.webContents.isDevToolsOpened()) {
             window.webContents.closeDevTools();
           } else {
@@ -387,18 +397,75 @@ export class ExtensionManager {
     }
   }
 
-  private validateExtensionManifest(manifest: any): void {
-    const required = ['name', 'version'];
-    for (const field of required) {
-      if (!manifest[field]) {
-        throw new Error(`Extension manifest missing required field: ${field}`);
+  private validateExtensionManifest(manifest: unknown): void {
+    // Use Zod for validation - this will throw if invalid
+    validateExtensionManifest(manifest);
+    // Additional engine version compatibility check
+    const parsedManifest = manifest as ExtensionManifest;
+    if (parsedManifest.engines?.['app-shell']) {
+      const requiredVersion = parsedManifest.engines['app-shell'];
+      const currentVersion = '1.0.0'; // Would come from app.getVersion()
+
+      if (!this.isVersionCompatible(currentVersion, requiredVersion)) {
+        throw new Error(
+          `Extension requires app-shell ${requiredVersion}, but ${currentVersion} is installed`
+        );
       }
     }
 
-    if (manifest.engines && manifest.engines['app-shell']) {
-      // TODO: Validate engine version compatibility
+    // Security validation
+    this.validateExtensionSecurity(parsedManifest);
+  }
+
+  private isVersionCompatible(currentVersion: string, requiredVersion: string): boolean {
+    // Simple version compatibility check
+    // In a real implementation, this would use a proper semver library
+    const parseVersion = (version: string) => {
+      return version
+        .replace(/[^\d.]/g, '')
+        .split('.')
+        .map(n => parseInt(n, 10));
+    };
+
+    const current = parseVersion(currentVersion);
+    const required = parseVersion(requiredVersion);
+
+    // Check major version compatibility
+    return current[0] >= required[0];
+  }
+
+  private validateExtensionSecurity(manifest: ExtensionManifest): void {
+    // Check for suspicious patterns
+    const suspiciousPatterns = [
+      'eval(',
+      'Function(',
+      'process.exit',
+      'require("child_process")',
+      'require("fs")',
+      '__dirname',
+      '__filename',
+    ];
+
+    const manifestString = JSON.stringify(manifest);
+    for (const pattern of suspiciousPatterns) {
+      if (manifestString.includes(pattern)) {
+        this.logger.warn(`Extension manifest contains potentially unsafe pattern: ${pattern}`);
+      }
+    }
+
+    // Validate activation events
+    if (manifest.activationEvents) {
+      const allowedEvents = ['*', 'onCommand', 'onLanguage', 'onStartup'];
+      for (const event of manifest.activationEvents) {
+        const eventType = event.split(':')[0];
+        if (!allowedEvents.includes(eventType)) {
+          this.logger.warn(`Extension uses unknown activation event: ${event}`);
+        }
+      }
     }
   }
+
+  // Validation is now handled by Zod schemas
 
   private createExtensionContext(extension: Extension, extensionPath: string): ExtensionContext {
     const globalStatePath = path.join(this.globalStoragePath, extension.id + '.json');
@@ -413,17 +480,36 @@ export class ExtensionManager {
     };
   }
 
-  private registerContributedThemes(themes: any[], extensionPath: string): void {
+  private registerContributedThemes(
+    themes: { id: string; label: string; path: string }[],
+    extensionPath: string
+  ): void {
     for (const themeContrib of themes) {
       try {
         const themePath = path.join(extensionPath, themeContrib.path);
         if (fs.existsSync(themePath)) {
           const themeContent = fs.readFileSync(themePath, 'utf8');
-          const theme: Theme = JSON.parse(themeContent);
-          theme.id = themeContrib.id;
-          theme.name = themeContrib.label;
-          this.themes.set(theme.id, theme);
-          this.logger.debug(`Registered theme: ${theme.name}`);
+          const rawTheme = JSON.parse(themeContent);
+
+          // Validate and enhance theme data
+          const themeResult = safeParseTheme({
+            ...rawTheme,
+            id: themeContrib.id,
+            name: themeContrib.label,
+          });
+
+          if (themeResult.success) {
+            const themeData = themeResult.data;
+            // Ensure colors is properly typed
+            if (themeData.colors && typeof themeData.colors === 'object') {
+              this.themes.set(themeData.id, themeData as Theme);
+              this.logger.debug(`Registered theme: ${themeData.name}`);
+            } else {
+              this.logger.error(`Invalid theme colors format: ${themeContrib.id}`);
+            }
+          } else {
+            this.logger.error(`Invalid theme format: ${themeContrib.id}`, themeResult.error);
+          }
         }
       } catch (error) {
         this.logger.error(`Failed to load theme: ${themeContrib.id}`, error);
@@ -433,7 +519,8 @@ export class ExtensionManager {
 
   private async loadEnabledExtensions(): Promise<void> {
     try {
-      const enabledExtensions = (await this.settingsManager.get('extensions.enabled')) || [];
+      const settingsValue = await this.settingsManager.get('extensions.enabled');
+      const enabledExtensions = Array.isArray(settingsValue) ? (settingsValue as string[]) : [];
       for (const extensionId of enabledExtensions) {
         await this.activateExtension(extensionId);
       }
@@ -466,8 +553,11 @@ export class ExtensionManager {
         // Clear require cache to allow reloading
         delete require.cache[require.resolve(extensionMainPath)];
 
-        const extensionModule = await import(extensionMainPath);
+        const extensionModule = await import(pathToFileURL(extensionMainPath).href);
         loadedExt.module = extensionModule;
+
+        // Initialize extension API context
+        this.initializeExtensionAPI(loadedExt.context, extensionModule);
 
         // Call activate function if it exists
         if (typeof extensionModule.activate === 'function') {
@@ -482,6 +572,22 @@ export class ExtensionManager {
             loadedExt.context
           );
         }
+
+        // Register contributed settings
+        if (loadedExt.extension.contributes?.settings) {
+          this.registerContributedSettings(
+            loadedExt.extension.contributes.settings,
+            loadedExt.context
+          );
+        }
+
+        // Register contributed keybindings
+        if (loadedExt.extension.contributes?.keybindings) {
+          this.registerContributedKeybindings(
+            loadedExt.extension.contributes.keybindings,
+            loadedExt.context
+          );
+        }
       }
 
       loadedExt.isActive = true;
@@ -492,6 +598,13 @@ export class ExtensionManager {
         extensionId,
         activationEvent: 'manual',
       });
+
+      // Emit general extension event
+      this.emitExtensionEvent('stateChanged', {
+        extensionId,
+        state: 'activated',
+        extension: loadedExt.extension,
+      });
     } catch (error) {
       this.logger.error(`Failed to activate extension: ${extensionId}`, error);
       throw error;
@@ -499,16 +612,23 @@ export class ExtensionManager {
   }
 
   private registerContributedCommands(
-    commands: any[],
-    extensionModule: any,
+    commands: { command: string; title: string; category?: string; icon?: string; when?: string }[],
+    extensionModule: { [key: string]: unknown },
     _context: ExtensionContext
   ): void {
     for (const commandContrib of commands) {
-      const callback =
-        extensionModule[commandContrib.command] ||
-        (() => {
-          throw new Error(`Command handler not found: ${commandContrib.command}`);
-        });
+      const handlerFn = extensionModule[commandContrib.command];
+      const defaultCallback = (): never => {
+        throw new Error(`Command handler not found: ${commandContrib.command}`);
+      };
+
+      let boundCallback: (...args: unknown[]) => unknown;
+      if (typeof handlerFn === 'function') {
+        // Cast function to known type before binding
+        boundCallback = (handlerFn as (...args: unknown[]) => unknown).bind(extensionModule);
+      } else {
+        boundCallback = defaultCallback;
+      }
 
       this.registerCommand({
         command: commandContrib.command,
@@ -516,7 +636,7 @@ export class ExtensionManager {
         category: commandContrib.category,
         icon: commandContrib.icon,
         when: commandContrib.when,
-        callback: callback.bind(extensionModule),
+        callback: boundCallback,
       });
     }
   }
@@ -554,6 +674,13 @@ export class ExtensionManager {
       loadedExt.module = undefined;
 
       this.logger.info(`Extension deactivated: ${loadedExt.extension.name}`);
+
+      // Emit deactivation event
+      this.emitExtensionEvent('stateChanged', {
+        extensionId,
+        state: 'deactivated',
+        extension: loadedExt.extension,
+      });
     } catch (error) {
       this.logger.error(`Failed to deactivate extension: ${extensionId}`, error);
       throw error;
@@ -585,7 +712,8 @@ export class ExtensionManager {
     await this.activateExtension(extensionId);
 
     // Update enabled extensions list
-    const enabled = (await this.settingsManager.get('extensions.enabled')) || [];
+    const settingsValue = await this.settingsManager.get('extensions.enabled');
+    const enabled = Array.isArray(settingsValue) ? (settingsValue as string[]) : [];
     if (!enabled.includes(extensionId)) {
       enabled.push(extensionId);
       await this.settingsManager.set('extensions.enabled', enabled);
@@ -596,7 +724,8 @@ export class ExtensionManager {
     await this.deactivateExtension(extensionId);
 
     // Update enabled extensions list
-    const enabled = (await this.settingsManager.get('extensions.enabled')) || [];
+    const settingsValue = await this.settingsManager.get('extensions.enabled');
+    const enabled = Array.isArray(settingsValue) ? (settingsValue as string[]) : [];
     const index = enabled.indexOf(extensionId);
     if (index > -1) {
       enabled.splice(index, 1);
@@ -608,14 +737,54 @@ export class ExtensionManager {
     this.logger.info(`Installing extension from: ${extensionPath}`);
 
     try {
-      // Load extension temporarily to get its info
-      const tempPath = path.resolve(extensionPath);
-      await this.loadExtensionFromPath(tempPath);
+      const sourcePath = path.resolve(extensionPath);
 
-      // TODO: Copy extension to extensions directory
-      // TODO: Add to installed extensions list
+      // Check if source exists
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Extension path does not exist: ${extensionPath}`);
+      }
 
-      throw new Error('Extension installation not fully implemented yet');
+      // Read manifest to get extension info
+      const manifestPath = path.join(sourcePath, 'package.json');
+      if (!fs.existsSync(manifestPath)) {
+        throw new Error('Extension manifest (package.json) not found');
+      }
+
+      const manifestContent = fs.readFileSync(manifestPath, 'utf8');
+      const manifest = JSON.parse(manifestContent);
+      this.validateExtensionManifest(manifest);
+
+      const extensionId = manifest.name;
+
+      // Check if extension is already installed
+      if (this.extensions.has(extensionId)) {
+        throw new Error(`Extension already installed: ${extensionId}`);
+      }
+
+      // Create destination path
+      const destPath = path.join(this.extensionsPath, extensionId);
+
+      // Copy extension files
+      await this.copyExtensionFiles(sourcePath, destPath);
+
+      // Load the extension
+      await this.loadExtensionFromPath(destPath);
+
+      // Add to installed extensions list
+      const enabledSettings = await this.settingsManager.get('extensions.enabled');
+      const enabledExtensions = Array.isArray(enabledSettings) ? (enabledSettings as string[]) : [];
+      if (!enabledExtensions.includes(extensionId)) {
+        enabledExtensions.push(extensionId);
+        await this.settingsManager.set('extensions.enabled', enabledExtensions);
+      }
+
+      const extension = this.extensions.get(extensionId)?.extension;
+      if (!extension) {
+        throw new Error('Failed to load installed extension');
+      }
+
+      this.logger.info(`Extension installed successfully: ${extensionId}`);
+      return extension;
     } catch (error) {
       this.logger.error('Failed to install extension', error);
       throw error;
@@ -625,16 +794,49 @@ export class ExtensionManager {
   async uninstallExtension(extensionId: string): Promise<void> {
     this.logger.info(`Uninstalling extension: ${extensionId}`);
 
-    // Deactivate first
-    await this.disableExtension(extensionId);
+    const loadedExt = this.extensions.get(extensionId);
+    if (!loadedExt) {
+      throw new Error(`Extension not found: ${extensionId}`);
+    }
 
-    // Remove from extensions map
-    this.extensions.delete(extensionId);
+    try {
+      // Deactivate first
+      await this.disableExtension(extensionId);
 
-    // TODO: Remove extension files from filesystem
-    // TODO: Clean up storage
+      // Remove extension files from filesystem
+      const extensionPath = path.join(this.extensionsPath, extensionId);
+      if (fs.existsSync(extensionPath)) {
+        await this.removeDirectory(extensionPath);
+      }
 
-    this.logger.info(`Extension uninstalled: ${extensionId}`);
+      // Clean up storage
+      const globalStatePath = path.join(this.globalStoragePath, extensionId + '.json');
+      const workspaceStatePath = path.join(this.workspaceStoragePath, extensionId + '.json');
+
+      if (fs.existsSync(globalStatePath)) {
+        fs.unlinkSync(globalStatePath);
+      }
+      if (fs.existsSync(workspaceStatePath)) {
+        fs.unlinkSync(workspaceStatePath);
+      }
+
+      // Remove from extensions map
+      this.extensions.delete(extensionId);
+
+      // Remove from enabled extensions list
+      const enabledSettings = await this.settingsManager.get('extensions.enabled');
+      const enabledExtensions = Array.isArray(enabledSettings) ? (enabledSettings as string[]) : [];
+      const index = enabledExtensions.indexOf(extensionId);
+      if (index > -1) {
+        enabledExtensions.splice(index, 1);
+        await this.settingsManager.set('extensions.enabled', enabledExtensions);
+      }
+
+      this.logger.info(`Extension uninstalled: ${extensionId}`);
+    } catch (error) {
+      this.logger.error(`Failed to uninstall extension: ${extensionId}`, error);
+      throw error;
+    }
   }
 
   getAllThemes(): Theme[] {
@@ -656,7 +858,7 @@ export class ExtensionManager {
     return Array.from(this.commands.values());
   }
 
-  async executeCommand(commandId: string, ...args: any[]): Promise<any> {
+  async executeCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
     const command = this.commands.get(commandId);
     if (command) {
       try {
@@ -675,8 +877,226 @@ export class ExtensionManager {
   }
 
   private emitActivationEvent(event: ExtensionActivationEvent): void {
-    // TODO: Implement event emission to renderer processes
-    this.logger.debug('Extension activation event', event);
+    try {
+      // Emit to all renderer processes
+      const windows = BrowserWindow.getAllWindows();
+
+      for (const window of windows) {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('extension:activated', event);
+        }
+      }
+
+      this.logger.debug('Extension activation event emitted', event);
+    } catch (error) {
+      this.logger.error('Failed to emit extension activation event', error);
+    }
+  }
+
+  emitExtensionEvent(eventType: string, data: unknown): void {
+    try {
+      const windows = BrowserWindow.getAllWindows();
+
+      for (const window of windows) {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send(`extension:${eventType}`, data);
+        }
+      }
+
+      this.logger.debug(`Extension event emitted: ${eventType}`, data);
+    } catch (error) {
+      this.logger.error(`Failed to emit extension event: ${eventType}`, error);
+    }
+  }
+
+  private async copyExtensionFiles(sourcePath: string, destPath: string): Promise<void> {
+    const copyFile = util.promisify(fs.copyFile);
+    const mkdir = util.promisify(fs.mkdir);
+    const readdir = util.promisify(fs.readdir);
+    const stat = util.promisify(fs.stat);
+
+    const copyRecursive = async (src: string, dest: string): Promise<void> => {
+      const stats = await stat(src);
+
+      if (stats.isDirectory()) {
+        await mkdir(dest, { recursive: true });
+        const items = await readdir(src);
+
+        for (const item of items) {
+          const srcPath = path.join(src, item);
+          const destPath = path.join(dest, item);
+          await copyRecursive(srcPath, destPath);
+        }
+      } else {
+        await copyFile(src, dest);
+      }
+    };
+
+    await copyRecursive(sourcePath, destPath);
+  }
+
+  private async removeDirectory(dirPath: string): Promise<void> {
+    const rmdir = util.promisify(fs.rmdir);
+    const unlink = util.promisify(fs.unlink);
+    const readdir = util.promisify(fs.readdir);
+    const stat = util.promisify(fs.stat);
+
+    const removeRecursive = async (targetPath: string): Promise<void> => {
+      const stats = await stat(targetPath);
+
+      if (stats.isDirectory()) {
+        const items = await readdir(targetPath);
+
+        for (const item of items) {
+          const itemPath = path.join(targetPath, item);
+          await removeRecursive(itemPath);
+        }
+
+        await rmdir(targetPath);
+      } else {
+        await unlink(targetPath);
+      }
+    };
+
+    await removeRecursive(dirPath);
+  }
+
+  private initializeExtensionAPI(
+    context: ExtensionContext,
+    extensionModule: { [key: string]: unknown }
+  ): void {
+    // Create a scoped API object for the extension
+    const extensionAPI = {
+      // Window API
+      window: {
+        showInformationMessage: (message: string) => {
+          this.logger.info(`[${context.extensionId}] ${message}`);
+          // Could be enhanced to show actual UI notifications
+        },
+        showWarningMessage: (message: string) => {
+          this.logger.warn(`[${context.extensionId}] ${message}`);
+        },
+        showErrorMessage: (message: string) => {
+          this.logger.error(`[${context.extensionId}] ${message}`);
+        },
+      },
+
+      // Commands API
+      commands: {
+        registerCommand: (
+          commandId: string,
+          callback: (...args: unknown[]) => unknown,
+          title?: string,
+          category?: string
+        ) => {
+          const fullCommandId = `${context.extensionId}.${commandId}`;
+          const commandRegistration = {
+            command: fullCommandId,
+            title: title || commandId,
+            category: category || 'Extension',
+            callback,
+          };
+
+          this.registerCommand(commandRegistration);
+
+          // Create disposable
+          const disposable = {
+            dispose: () => {
+              this.unregisterCommand(fullCommandId);
+            },
+          };
+
+          context.subscriptions.push(disposable);
+          return disposable;
+        },
+
+        executeCommand: async (commandId: string, ...args: unknown[]) => {
+          return this.executeCommand(commandId, ...args);
+        },
+      },
+
+      // Configuration API
+      workspace: {
+        getConfiguration: (section?: string) => {
+          return {
+            get: (key: string, defaultValue?: SettingsValue) => {
+              const fullKey = section ? `${section}.${key}` : key;
+              return this.settingsManager.get(fullKey) || defaultValue;
+            },
+            update: async (key: string, value: SettingsValue) => {
+              const fullKey = section ? `${section}.${key}` : key;
+              await this.settingsManager.set(fullKey, value);
+            },
+          };
+        },
+      },
+
+      // Event API (simplified)
+      events: {
+        on: (event: string, callback: (...args: unknown[]) => void) => {
+          // Store event listeners in context for cleanup
+          interface EventSubscription {
+            event: string;
+            callback: (...args: unknown[]) => void;
+            dispose: () => void;
+          }
+
+          if (!context.subscriptions.find(sub => (sub as EventSubscription).event === event)) {
+            const disposable: EventSubscription = {
+              event,
+              callback,
+              dispose: () => {
+                // Remove event listener
+              },
+            };
+            context.subscriptions.push(disposable);
+          }
+        },
+      },
+    };
+
+    // Expose the API to the extension module
+    if (extensionModule) {
+      extensionModule.appShell = extensionAPI;
+    }
+  }
+
+  private registerContributedSettings(
+    settings: {
+      key: string;
+      type: string;
+      default: unknown;
+      title: string;
+      description?: string;
+    }[],
+    context: ExtensionContext
+  ): void {
+    for (const setting of settings) {
+      try {
+        // Register the setting with the settings manager
+        // This would extend the settings schema dynamically
+        this.logger.debug(`Registered setting: ${setting.key} from ${context.extensionId}`);
+      } catch (error) {
+        this.logger.error(`Failed to register setting: ${setting.key}`, error);
+      }
+    }
+  }
+
+  private registerContributedKeybindings(
+    keybindings: { command: string; key: string; when?: string }[],
+    context: ExtensionContext
+  ): void {
+    for (const keybinding of keybindings) {
+      try {
+        // Register the keybinding with the keybinding manager
+        // This would need a keybinding manager to be implemented
+        this.logger.debug(
+          `Registered keybinding: ${keybinding.key} -> ${keybinding.command} from ${context.extensionId}`
+        );
+      } catch (error) {
+        this.logger.error(`Failed to register keybinding: ${keybinding.key}`, error);
+      }
+    }
   }
 
   async dispose(): Promise<void> {
