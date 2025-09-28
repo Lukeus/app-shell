@@ -68,7 +68,7 @@ export interface CommandContext {
   /**
    * Optional arguments for the command
    */
-  args?: any;
+  args?: unknown;
 
   /**
    * Source that triggered the command
@@ -80,7 +80,7 @@ export interface CommandContext {
 /**
  * Command handler function type
  */
-export type CommandHandler = (context: CommandContext) => Promise<any> | any;
+export type CommandHandler = (context: CommandContext) => Promise<unknown> | unknown;
 
 /**
  * Keybinding representation

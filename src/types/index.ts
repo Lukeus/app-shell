@@ -36,7 +36,7 @@ export interface Command {
 }
 
 export interface CommandRegistration extends Command {
-  callback: (...args: any[]) => Promise<any> | any;
+  callback: (...args: unknown[]) => Promise<unknown> | unknown;
 }
 
 // Theme system
@@ -127,10 +127,10 @@ export interface ThemeContribution {
 export interface SettingContribution {
   key: string;
   type: 'boolean' | 'string' | 'number' | 'array' | 'object';
-  default: any;
+  default: unknown;
   title: string;
   description?: string;
-  enum?: any[];
+  enum?: unknown[];
   enumDescriptions?: string[];
   scope?: 'application' | 'window' | 'resource';
   order?: number;
@@ -169,12 +169,12 @@ export interface KeybindingContribution {
 // IPC Communication
 export interface IPCChannel {
   name: string;
-  handler: (event: Electron.IpcMainEvent, ...args: any[]) => Promise<any> | any;
+  handler: (event: Electron.IpcMainEvent, ...args: unknown[]) => Promise<unknown> | unknown;
 }
 
 export interface RendererIPCChannel {
   name: string;
-  handler: (...args: any[]) => Promise<any> | any;
+  handler: (...args: unknown[]) => Promise<unknown> | unknown;
 }
 
 // Terminal system
@@ -213,7 +213,7 @@ export interface WindowState {
 // Application state
 export interface AppState {
   theme: string;
-  settings: { [key: string]: any };
+  settings: { [key: string]: unknown };
   windowState: WindowState;
   openTabs: string[];
   activeTab?: string;
@@ -232,7 +232,7 @@ export interface ExtensionContext {
 
 export interface StateManager {
   get<T>(key: string, defaultValue?: T): T | undefined;
-  update(key: string, value: any): Promise<void>;
+  update(key: string, value: unknown): Promise<void>;
   keys(): readonly string[];
 }
 
@@ -266,13 +266,13 @@ export interface View {
 }
 
 // Events
-export interface AppEvent<T = any> {
+export interface AppEvent<T = unknown> {
   type: string;
   data?: T;
   timestamp: number;
 }
 
-export type EventCallback<T = any> = (event: AppEvent<T>) => void;
+export type EventCallback<T = unknown> = (event: AppEvent<T>) => void;
 
 // File system
 export interface FileSystemProvider {
@@ -424,10 +424,10 @@ export interface MarketplaceService {
 
 // Logging
 export interface Logger {
-  debug(message: string, ...args: any[]): void;
-  info(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  error(message: string | Error, ...args: any[]): void;
+  debug(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string | Error, ...args: unknown[]): void;
 }
 
 export enum LogLevel {
