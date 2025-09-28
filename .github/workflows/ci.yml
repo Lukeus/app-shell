@@ -76,7 +76,12 @@ jobs:
             libgdk-pixbuf2.0-0
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Install dependencies with Electron binaries
+          pnpm config set ignore-scripts false
+          pnpm install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: false
 
       - name: Build application
         run: pnpm run build
@@ -130,7 +135,12 @@ jobs:
             xvfb
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Install dependencies with Electron binaries
+          pnpm config set ignore-scripts false
+          pnpm install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: false
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
