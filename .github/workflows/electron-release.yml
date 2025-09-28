@@ -1,0 +1,313 @@
+name: Electron Release
+
+on:
+  # Manual trigger for releases
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0, 1.2.3-beta.1)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+  # Trigger after successful CI on main branch
+  workflow_run:
+    workflows: ['CI']
+    branches: [main]
+    types: [completed]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Only run if CI passed or manual trigger
+  check-trigger:
+    name: Check Release Trigger
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Check if release should proceed
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual release triggered"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            echo "CI passed - auto release enabled"
+            echo "should_release=false" >> $GITHUB_OUTPUT  # Disable auto-release for now
+          else
+            echo "Release conditions not met"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set version information
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+            PRERELEASE="${{ inputs.prerelease }}"
+          else
+            # Auto-increment patch version (when auto-release is enabled)
+            VERSION="1.0.0"  # Default for now
+            PRERELEASE="false"
+          fi
+
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "Release version: $VERSION"
+          echo "Tag: $TAG"
+          echo "Pre-release: $PRERELEASE"
+
+  # Create tag and update version
+  create-tag:
+    name: Create Release Tag
+    runs-on: ubuntu-latest
+    needs: [check-trigger]
+    if: needs.check-trigger.outputs.should_release == 'true'
+    outputs:
+      version: ${{ needs.check-trigger.outputs.version }}
+      tag: ${{ needs.check-trigger.outputs.tag }}
+      prerelease: ${{ needs.check-trigger.outputs.prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Update package.json version
+        run: |
+          VERSION="${{ needs.check-trigger.outputs.version }}"
+          TAG="${{ needs.check-trigger.outputs.tag }}"
+
+          echo "Updating package.json to version $VERSION"
+          npm version $VERSION --no-git-tag-version
+
+          # Configure git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Commit version update
+          git add package.json
+          git commit -m "chore: bump version to $VERSION [skip ci]"
+
+          # Create and push tag
+          git tag -a $TAG -m "Release $TAG"
+          git push origin main
+          git push origin $TAG
+
+          echo "✅ Created tag $TAG and updated version to $VERSION"
+
+  # Build packages for all platforms
+  build-packages:
+    name: Build Packages
+    needs: [create-tag]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libnss3-dev \
+            libatk-bridge2.0-dev \
+            libdrm2 \
+            libgtk-3-0 \
+            libgbm-dev \
+            libxss1 \
+            libxtst6 \
+            libxrandr2 \
+            libasound2t64 \
+            libpangocairo-1.0-0 \
+            libatk1.0-0 \
+            libcairo-gobject2 \
+            libgtk-3-0 \
+            libgdk-pixbuf2.0-0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm run build
+
+      - name: Package for Linux
+        if: matrix.platform == 'linux'
+        run: |
+          pnpm run package:linux
+          echo "📦 Linux packages created:"
+          ls -la release/build/
+
+      - name: Package for Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          pnpm run package:win
+          Write-Host "📦 Windows packages created:"
+          Get-ChildItem release/build/
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Package for macOS
+        if: matrix.platform == 'macos'
+        run: |
+          pnpm run package:mac
+          echo "📦 macOS packages created:"
+          ls -la release/build/
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload Linux artifacts
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            release/build/*.AppImage
+            release/build/*.deb
+            release/build/*.rpm
+            release/build/*.snap
+          retention-days: 90
+
+      - name: Upload Windows artifacts
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            release/build/*.exe
+            release/build/*.msi
+          retention-days: 90
+
+      - name: Upload macOS artifacts
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-packages
+          path: |
+            release/build/*.dmg
+            release/build/*.zip
+          retention-days: 90
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    needs: [create-tag, build-packages]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag }}
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: ./release-assets/
+
+      - name: List release assets
+        run: |
+          echo "📦 Release assets prepared:"
+          find ./release-assets/ -type f -exec ls -la {} \;
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-tag.outputs.tag }}
+          name: 'App Shell ${{ needs.create-tag.outputs.tag }}'
+          draft: false
+          prerelease: ${{ needs.create-tag.outputs.prerelease }}
+          generate_release_notes: true
+          body: |
+            ## 🚀 App Shell ${{ needs.create-tag.outputs.tag }}
+
+            An enterprise-grade, cross-platform Electron application shell with extension support.
+
+            ### 📥 Downloads
+
+            **Windows:**
+            - `.exe` - Windows installer (recommended)
+            - `.msi` - Windows MSI installer
+
+            **macOS:**
+            - `.dmg` - macOS disk image (recommended)  
+            - `.zip` - macOS app bundle
+
+            **Linux:**
+            - `.AppImage` - Portable Linux application (recommended)
+            - `.deb` - Debian/Ubuntu package
+            - `.rpm` - Red Hat/Fedora package
+            - `.snap` - Snap package
+
+            ### ✨ What's New
+
+            See the auto-generated release notes below for detailed changes.
+
+            ### 🛠️ Installation
+
+            1. Download the appropriate package for your operating system
+            2. Install/run the application  
+            3. The app shell is ready to use with extension support!
+
+            ### 📚 Documentation
+
+            - [Extension Development Guide](https://github.com/${{ github.repository }}/blob/main/docs/extension-development.md)
+            - [Contributing Guidelines](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md)
+
+            ---
+
+            **Platform Support:** Windows 10+, macOS 10.14+, Ubuntu 18.04+  
+            **Architecture:** x64, ARM64 (where supported)
+          files: |
+            ./release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

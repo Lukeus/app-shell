@@ -1,11 +1,8 @@
 # App Shell
 
 [![CI](https://github.com/Lukeus/app-shell/workflows/CI/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/ci.yml)
-[![Manual Release](https://github.com/Lukeus/app-shell/workflows/Manual%20Release/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/release.yml)
+[![Electron Release](https://github.com/Lukeus/app-shell/workflows/Electron%20Release/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/electron-release.yml)
 [![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml)
-[![Security Audit](https://github.com/Lukeus/app-shell/workflows/Security/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/security.yml)
-[![Known Vulnerabilities](https://snyk.io/test/github/Lukeus/app-shell/badge.svg)](https://snyk.io/test/github/Lukeus/app-shell)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLukeus%2Fapp-shell?ref=badge_shield)
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Lukeus/app-shell?sort=semver&logo=github)](https://github.com/Lukeus/app-shell/releases/latest)
 [![GitHub all releases](https://img.shields.io/github/downloads/Lukeus/app-shell/total?logo=github)](https://github.com/Lukeus/app-shell/releases)
