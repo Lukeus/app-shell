@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { isMacOS, getCommandPaletteShortcut, getModifierKeyDisplay } from '../utils/platform';
 
 export const StatusBar: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -32,6 +33,18 @@ export const StatusBar: React.FC = () => {
       case 'language':
         // Open language selector
         break;
+      case 'command-palette':
+        // Simulate the platform-appropriate keyboard shortcut to open command palette
+        const event = new KeyboardEvent('keydown', {
+          key: 'P',
+          metaKey: isMacOS(),
+          ctrlKey: !isMacOS(),
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        });
+        document.dispatchEvent(event);
+        break;
       default:
         break;
     }
@@ -57,6 +70,15 @@ export const StatusBar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-4">
+        <div
+          className="status-item cursor-pointer hover:bg-blue-600"
+          onClick={() => handleStatusItemClick('command-palette')}
+          title={`Press ${getCommandPaletteShortcut()} to open Command Palette`}
+        >
+          <span className="text-xs">{getModifierKeyDisplay()}</span>
+          <span className="whitespace-nowrap">Command Palette</span>
+        </div>
+
         <div className="status-item" onClick={() => handleStatusItemClick('language')}>
           <span className="whitespace-nowrap">{state.statusBarItems.languageMode}</span>
         </div>

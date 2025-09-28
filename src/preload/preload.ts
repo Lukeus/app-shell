@@ -36,6 +36,26 @@ interface ElectronAPI {
   showOpenDialog: (options: any) => Promise<any>;
   showSaveDialog: (options: any) => Promise<any>;
 
+  // File system operations
+  readFile: (filePath: string) => Promise<Uint8Array>;
+  readFileText: (filePath: string, encoding?: BufferEncoding) => Promise<string>;
+  writeFile: (filePath: string, data: Uint8Array) => Promise<void>;
+  writeFileText: (filePath: string, content: string, encoding?: BufferEncoding) => Promise<void>;
+  createDirectory: (dirPath: string) => Promise<void>;
+  deleteFile: (filePath: string) => Promise<void>;
+  deleteDirectory: (dirPath: string) => Promise<void>;
+  exists: (filePath: string) => Promise<boolean>;
+  stat: (filePath: string) => Promise<any>;
+  readDirectory: (dirPath: string) => Promise<[string, number][]>;
+  getFileTree: (rootPath: string, depth?: number) => Promise<any>;
+  rename: (oldPath: string, newPath: string) => Promise<void>;
+  copyFile: (sourcePath: string, targetPath: string) => Promise<void>;
+  getHomeDirectory: () => Promise<string>;
+  getPathSeparator: () => Promise<string>;
+  joinPath: (...segments: string[]) => Promise<string>;
+  resolvePath: (filePath: string) => Promise<string>;
+  relativePath: (from: string, to: string) => Promise<string>;
+
   // Platform info
   getPlatformInfo: () => Promise<any>;
 
@@ -115,6 +135,33 @@ const electronAPI: ElectronAPI = {
   // File system
   showOpenDialog: (options: any) => ipcRenderer.invoke('fs:showOpenDialog', options),
   showSaveDialog: (options: any) => ipcRenderer.invoke('fs:showSaveDialog', options),
+
+  // File system operations
+  readFile: (filePath: string) => ipcRenderer.invoke('filesystem:readFile', filePath),
+  readFileText: (filePath: string, encoding?: BufferEncoding) =>
+    ipcRenderer.invoke('filesystem:readFileText', filePath, encoding),
+  writeFile: (filePath: string, data: Uint8Array) =>
+    ipcRenderer.invoke('filesystem:writeFile', filePath, data),
+  writeFileText: (filePath: string, content: string, encoding?: BufferEncoding) =>
+    ipcRenderer.invoke('filesystem:writeFileText', filePath, content, encoding),
+  createDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:createDirectory', dirPath),
+  deleteFile: (filePath: string) => ipcRenderer.invoke('filesystem:deleteFile', filePath),
+  deleteDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:deleteDirectory', dirPath),
+  exists: (filePath: string) => ipcRenderer.invoke('filesystem:exists', filePath),
+  stat: (filePath: string) => ipcRenderer.invoke('filesystem:stat', filePath),
+  readDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:readDirectory', dirPath),
+  getFileTree: (rootPath: string, depth?: number) =>
+    ipcRenderer.invoke('filesystem:getFileTree', rootPath, depth),
+  rename: (oldPath: string, newPath: string) =>
+    ipcRenderer.invoke('filesystem:rename', oldPath, newPath),
+  copyFile: (sourcePath: string, targetPath: string) =>
+    ipcRenderer.invoke('filesystem:copyFile', sourcePath, targetPath),
+  getHomeDirectory: () => ipcRenderer.invoke('filesystem:getHomeDirectory'),
+  getPathSeparator: () => ipcRenderer.invoke('filesystem:getPathSeparator'),
+  joinPath: (...segments: string[]) => ipcRenderer.invoke('filesystem:joinPath', ...segments),
+  resolvePath: (filePath: string) => ipcRenderer.invoke('filesystem:resolvePath', filePath),
+  relativePath: (from: string, to: string) =>
+    ipcRenderer.invoke('filesystem:relativePath', from, to),
 
   // Platform info
   getPlatformInfo: () => ipcRenderer.invoke('app:getPlatform'),
