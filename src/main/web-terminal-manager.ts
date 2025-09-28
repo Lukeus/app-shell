@@ -8,6 +8,7 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { Logger } from './logger';
+import { TerminalOptions } from '../schemas';
 import { BrowserWindow } from 'electron';
 import * as os from 'os';
 import * as path from 'path';
@@ -36,7 +37,9 @@ export class WebTerminalManager {
     this.logger.info('Main window set for WebTerminalManager');
   }
 
-  async createTerminal(options?: any): Promise<{ id: string; pid: number }> {
+  async createTerminal(
+    options?: TerminalOptions
+  ): Promise<{ id: string; pid: number; title: string; cwd: string }> {
     const terminalId = `web-terminal-${Date.now()}`;
 
     // Determine shell based on platform
@@ -133,6 +136,8 @@ export class WebTerminalManager {
       return {
         id: terminalId,
         pid: childProcess.pid || 0,
+        title: 'Terminal',
+        cwd,
       };
     } catch (error) {
       this.logger.error(`Failed to create web terminal: ${error}`);

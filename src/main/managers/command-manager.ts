@@ -5,7 +5,7 @@
  * Provides a centralized system for handling all app commands.
  */
 
-import { ipcMain, BrowserWindow, app, IpcMainInvokeEvent, dialog } from 'electron';
+import { ipcMain, BrowserWindow, IpcMainInvokeEvent, dialog } from 'electron';
 import { Command, CommandRegistration } from '../../types';
 import { Logger } from '../logger';
 
@@ -22,7 +22,17 @@ export class CommandManager {
   /**
    * Register a command with its handler
    */
-  public registerCommand(command: Command, callback: (...args: any[]) => Promise<any> | any): void {
+  public registerCommand(
+    command: Command & { accelerator?: string },
+    callback: (...args: unknown[]) => Promise<unknown> | unknown
+  ): void {
+    // If there's an accelerator, register it as a menu shortcut
+    if (command.accelerator) {
+      // Register with menu
+      this.logger.debug(
+        `Registering accelerator: ${command.accelerator} for command: ${command.command}`
+      );
+    }
     const registration: CommandRegistration = {
       ...command,
       callback,
@@ -35,7 +45,7 @@ export class CommandManager {
   /**
    * Execute a command by ID
    */
-  public async executeCommand(commandId: string, ...args: any[]): Promise<any> {
+  public async executeCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
     const command = this.commands.get(commandId);
     if (!command) {
       const error = `Command '${commandId}' not found`;
@@ -98,7 +108,10 @@ export class CommandManager {
 
     for (const [commandId, command] of this.commands) {
       // Check if command has extensionId property (it would need to be added to CommandRegistration)
-      if ('extensionId' in command && (command as any).extensionId === extensionId) {
+      if (
+        'extensionId' in command &&
+        (command as { extensionId: string }).extensionId === extensionId
+      ) {
         commandsToRemove.push(commandId);
       }
     }
@@ -114,7 +127,7 @@ export class CommandManager {
     // Register IPC handlers directly without using IPCChannel interface
     ipcMain.handle(
       'command:execute',
-      async (event: IpcMainInvokeEvent, commandId: string, ...args: any[]) => {
+      async (event: IpcMainInvokeEvent, commandId: string, ...args: unknown[]) => {
         return this.executeCommand(commandId, ...args);
       }
     );
@@ -130,19 +143,16 @@ export class CommandManager {
     this.logger.info('Command manager IPC channels registered');
   }
 
+  private getKeybindingForPlatform(keybinding: string): string {
+    // Replace Mod with the platform-specific modifier
+    const platform = process.platform;
+    const modKey = platform === 'darwin' ? 'Cmd' : 'Ctrl';
+    return keybinding.replace('Mod', modKey);
+  }
+
   private registerBuiltinCommands(): void {
     // Application commands
-    this.registerCommand(
-      {
-        command: 'app.quit',
-        title: 'Quit Application',
-        category: 'Application',
-        icon: 'close',
-      },
-      async () => {
-        app.quit();
-      }
-    );
+    // Don't register quit in command palette - handle it through menu only
 
     this.registerCommand(
       {
@@ -264,6 +274,7 @@ export class CommandManager {
         title: 'New Terminal',
         category: 'Terminal',
         icon: 'terminal',
+        accelerator: 'CommandOrControl+Shift+T',
       },
       async () => {
         const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -279,6 +290,7 @@ export class CommandManager {
         title: 'Clear Terminal',
         category: 'Terminal',
         icon: 'clear',
+        accelerator: 'CommandOrControl+K',
       },
       async () => {
         const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -310,6 +322,8 @@ export class CommandManager {
         title: 'Show Command Palette',
         category: 'View',
         icon: 'search',
+        accelerator:
+          process.platform === 'darwin' ? 'CommandOrControl+Shift+P' : 'CommandOrControl+Shift+P',
       },
       async () => {
         const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -356,6 +370,7 @@ export class CommandManager {
         title: 'Light Theme',
         category: 'Theme',
         icon: 'sun',
+        accelerator: 'CommandOrControl+Shift+L',
       },
       async () => {
         const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -371,6 +386,7 @@ export class CommandManager {
         title: 'Dark Theme',
         category: 'Theme',
         icon: 'moon',
+        accelerator: 'CommandOrControl+Shift+D',
       },
       async () => {
         const focusedWindow = BrowserWindow.getFocusedWindow();

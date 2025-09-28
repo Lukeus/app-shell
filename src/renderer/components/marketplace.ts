@@ -5,6 +5,12 @@ import {
   MarketplaceCategory,
 } from '../../types';
 
+interface PluginWithUpdateInfo extends MarketplacePlugin {
+  currentVersion?: string;
+  changelog?: string;
+  availableVersion?: string;
+}
+
 interface MarketplaceOptions {
   container: HTMLElement;
   onPluginInstall?: (pluginId: string) => void;
@@ -146,8 +152,13 @@ export class Marketplace {
     if (sortFilter) {
       sortFilter.addEventListener('change', () => {
         const [sortBy, sortOrder] = sortFilter.value.split(':');
-        this.currentQuery.sortBy = sortBy as any;
-        this.currentQuery.sortOrder = (sortOrder as any) || 'desc';
+        this.currentQuery.sortBy = sortBy as
+          | 'relevance'
+          | 'name'
+          | 'rating'
+          | 'downloads'
+          | 'updated';
+        this.currentQuery.sortOrder = (sortOrder as 'asc' | 'desc') || 'desc';
         this.currentQuery.page = 1;
         this.searchPlugins();
       });
@@ -294,7 +305,7 @@ export class Marketplace {
     if (this.currentView === 'updates' && hasUpdate) {
       actionButtons = `
         <button class="btn btn-primary btn-update" data-plugin-id="${plugin.id}">
-          Update to ${plugin.version}
+          Update to ${(plugin as PluginWithUpdateInfo).availableVersion}
         </button>
       `;
     } else if (isInstalled) {
@@ -323,7 +334,7 @@ export class Marketplace {
     const versionInfo =
       this.currentView === 'updates' && plugin.hasUpdate
         ? `<div class="version-info">
-          <span class="current-version">${(plugin as any).currentVersion}</span> → 
+          <span class="current-version">${(plugin as PluginWithUpdateInfo).currentVersion}</span> → 
           <span class="new-version">${plugin.version}</span>
          </div>`
         : `<div class="version">v${plugin.version}</div>`;
@@ -355,12 +366,12 @@ export class Marketplace {
         </div>
         
         ${
-          this.currentView === 'updates' && (plugin as any).changelog
+          this.currentView === 'updates' && (plugin as PluginWithUpdateInfo).changelog
             ? `
           <div class="changelog">
             <details>
               <summary>What's New</summary>
-              <div class="changelog-content">${(plugin as any).changelog}</div>
+              <div class="changelog-content">${(plugin as PluginWithUpdateInfo).changelog}</div>
             </details>
           </div>
         `

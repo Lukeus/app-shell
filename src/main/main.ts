@@ -8,13 +8,14 @@ import { CommandManager } from './managers/command-manager';
 import { MarketplaceService } from './marketplace-service';
 import { FileSystemManager } from './file-system-manager';
 import { Logger } from './logger';
-import { Platform } from '../types';
+import { Platform, MarketplaceSearchQuery } from '../types';
+import { SettingsValue, TerminalOptions } from '../schemas';
 
 class AppShell {
   private windowManager: WindowManager;
   private extensionManager: ExtensionManager;
   private settingsManager: SettingsManager;
-  private terminalManager: any; // TerminalManager | MockTerminalManager | WebTerminalManager
+  private terminalManager: WebTerminalManager; // TerminalManager | MockTerminalManager | WebTerminalManager
   private ipcManager: IPCManager;
   private commandManager: CommandManager;
   private marketplaceService: MarketplaceService;
@@ -169,11 +170,14 @@ class AppShell {
     });
 
     // Settings management
-    this.ipcManager.handle('settings:get', async (event, key: string) => {
+    this.ipcManager.handle('settings:get', async (_event, ...args: unknown[]) => {
+      const key = args[0] as string;
       return this.settingsManager.get(key);
     });
 
-    this.ipcManager.handle('settings:set', async (event, key: string, value: any) => {
+    this.ipcManager.handle('settings:set', async (_event, ...args: unknown[]) => {
+      const key = args[0] as string;
+      const value = args[1] as SettingsValue;
       await this.settingsManager.set(key, value);
     });
 
@@ -182,22 +186,26 @@ class AppShell {
     });
 
     // Terminal management
-    this.ipcManager.handle('terminal:create', async (event, options?: any) => {
+    this.ipcManager.handle('terminal:create', async (_event, ...args: unknown[]) => {
+      const options = args[0] as TerminalOptions | undefined;
       return this.terminalManager.createTerminal(options);
     });
 
-    this.ipcManager.handle('terminal:write', async (event, terminalId: string, data: string) => {
+    this.ipcManager.handle('terminal:write', async (_event, ...args: unknown[]) => {
+      const terminalId = args[0] as string;
+      const data = args[1] as string;
       this.terminalManager.writeToTerminal(terminalId, data);
     });
 
-    this.ipcManager.handle(
-      'terminal:resize',
-      async (event, terminalId: string, cols: number, rows: number) => {
-        this.terminalManager.resizeTerminal(terminalId, cols, rows);
-      }
-    );
+    this.ipcManager.handle('terminal:resize', async (_event, ...args: unknown[]) => {
+      const terminalId = args[0] as string;
+      const cols = args[1] as number;
+      const rows = args[2] as number;
+      this.terminalManager.resizeTerminal(terminalId, cols, rows);
+    });
 
-    this.ipcManager.handle('terminal:kill', async (event, terminalId: string) => {
+    this.ipcManager.handle('terminal:kill', async (_event, ...args: unknown[]) => {
+      const terminalId = args[0] as string;
       this.terminalManager.killTerminal(terminalId);
     });
 
@@ -206,19 +214,23 @@ class AppShell {
       return this.extensionManager.getAllExtensions();
     });
 
-    this.ipcManager.handle('extensions:enable', async (event, extensionId: string) => {
+    this.ipcManager.handle('extensions:enable', async (_event, ...args: unknown[]) => {
+      const extensionId = args[0] as string;
       await this.extensionManager.enableExtension(extensionId);
     });
 
-    this.ipcManager.handle('extensions:disable', async (event, extensionId: string) => {
+    this.ipcManager.handle('extensions:disable', async (_event, ...args: unknown[]) => {
+      const extensionId = args[0] as string;
       await this.extensionManager.disableExtension(extensionId);
     });
 
-    this.ipcManager.handle('extensions:install', async (event, extensionPath: string) => {
+    this.ipcManager.handle('extensions:install', async (_event, ...args: unknown[]) => {
+      const extensionPath = args[0] as string;
       return this.extensionManager.installExtension(extensionPath);
     });
 
-    this.ipcManager.handle('extensions:uninstall', async (event, extensionId: string) => {
+    this.ipcManager.handle('extensions:uninstall', async (_event, ...args: unknown[]) => {
+      const extensionId = args[0] as string;
       await this.extensionManager.uninstallExtension(extensionId);
     });
 
@@ -227,90 +239,98 @@ class AppShell {
       return this.extensionManager.getAllThemes();
     });
 
-    this.ipcManager.handle('theme:apply', async (event, themeId: string) => {
+    this.ipcManager.handle('theme:apply', async (_event, ...args: unknown[]) => {
+      const themeId = args[0] as string;
       await this.extensionManager.applyTheme(themeId);
     });
 
     // Command execution is handled by CommandManager directly via IPC
 
     // File system operations
-    this.ipcManager.handle('fs:showOpenDialog', async (event, options: any) => {
+    this.ipcManager.handle('fs:showOpenDialog', async (_event, ...args: unknown[]) => {
+      const options = args[0] as Electron.OpenDialogOptions;
       const result = await dialog.showOpenDialog(options);
       return result;
     });
 
-    this.ipcManager.handle('fs:showSaveDialog', async (event, options: any) => {
+    this.ipcManager.handle('fs:showSaveDialog', async (_event, ...args: unknown[]) => {
+      const options = args[0] as Electron.SaveDialogOptions;
       const result = await dialog.showSaveDialog(options);
       return result;
     });
 
     // File system manager operations
-    this.ipcManager.handle('filesystem:readFile', async (event, filePath: string) => {
+    this.ipcManager.handle('filesystem:readFile', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
       return this.fileSystemManager.readFile(filePath);
     });
 
-    this.ipcManager.handle(
-      'filesystem:readFileText',
-      async (event, filePath: string, encoding?: BufferEncoding) => {
-        return this.fileSystemManager.readFileText(filePath, encoding);
-      }
-    );
+    this.ipcManager.handle('filesystem:readFileText', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
+      const encoding = args[1] as BufferEncoding | undefined;
+      return this.fileSystemManager.readFileText(filePath, encoding);
+    });
 
-    this.ipcManager.handle(
-      'filesystem:writeFile',
-      async (event, filePath: string, data: Uint8Array) => {
-        await this.fileSystemManager.writeFile(filePath, data);
-      }
-    );
+    this.ipcManager.handle('filesystem:writeFile', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
+      const data = args[1] as Uint8Array;
+      await this.fileSystemManager.writeFile(filePath, data);
+    });
 
-    this.ipcManager.handle(
-      'filesystem:writeFileText',
-      async (event, filePath: string, content: string, encoding?: BufferEncoding) => {
-        await this.fileSystemManager.writeFileText(filePath, content, encoding);
-      }
-    );
+    this.ipcManager.handle('filesystem:writeFileText', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
+      const content = args[1] as string;
+      const encoding = args[2] as BufferEncoding | undefined;
+      await this.fileSystemManager.writeFileText(filePath, content, encoding);
+    });
 
-    this.ipcManager.handle('filesystem:createDirectory', async (event, dirPath: string) => {
+    this.ipcManager.handle('filesystem:createDirectory', async (_event, ...args: unknown[]) => {
+      const dirPath = args[0] as string;
       await this.fileSystemManager.createDirectory(dirPath);
     });
 
-    this.ipcManager.handle('filesystem:deleteFile', async (event, filePath: string) => {
+    this.ipcManager.handle('filesystem:deleteFile', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
       await this.fileSystemManager.deleteFile(filePath);
     });
 
-    this.ipcManager.handle('filesystem:deleteDirectory', async (event, dirPath: string) => {
+    this.ipcManager.handle('filesystem:deleteDirectory', async (_event, ...args: unknown[]) => {
+      const dirPath = args[0] as string;
       await this.fileSystemManager.deleteDirectory(dirPath);
     });
 
-    this.ipcManager.handle('filesystem:exists', async (event, filePath: string) => {
+    this.ipcManager.handle('filesystem:exists', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
       return this.fileSystemManager.exists(filePath);
     });
 
-    this.ipcManager.handle('filesystem:stat', async (event, filePath: string) => {
+    this.ipcManager.handle('filesystem:stat', async (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
       return this.fileSystemManager.stat(filePath);
     });
 
-    this.ipcManager.handle('filesystem:readDirectory', async (event, dirPath: string) => {
+    this.ipcManager.handle('filesystem:readDirectory', async (_event, ...args: unknown[]) => {
+      const dirPath = args[0] as string;
       return this.fileSystemManager.readDirectory(dirPath);
     });
 
-    this.ipcManager.handle(
-      'filesystem:getFileTree',
-      async (event, rootPath: string, depth?: number) => {
-        return this.fileSystemManager.getFileTree(rootPath, depth);
-      }
-    );
+    this.ipcManager.handle('filesystem:getFileTree', async (_event, ...args: unknown[]) => {
+      const rootPath = args[0] as string;
+      const depth = args[1] as number | undefined;
+      return this.fileSystemManager.getFileTree(rootPath, depth);
+    });
 
-    this.ipcManager.handle('filesystem:rename', async (event, oldPath: string, newPath: string) => {
+    this.ipcManager.handle('filesystem:rename', async (_event, ...args: unknown[]) => {
+      const oldPath = args[0] as string;
+      const newPath = args[1] as string;
       await this.fileSystemManager.rename(oldPath, newPath);
     });
 
-    this.ipcManager.handle(
-      'filesystem:copyFile',
-      async (event, sourcePath: string, targetPath: string) => {
-        await this.fileSystemManager.copyFile(sourcePath, targetPath);
-      }
-    );
+    this.ipcManager.handle('filesystem:copyFile', async (_event, ...args: unknown[]) => {
+      const sourcePath = args[0] as string;
+      const targetPath = args[1] as string;
+      await this.fileSystemManager.copyFile(sourcePath, targetPath);
+    });
 
     this.ipcManager.handle('filesystem:getHomeDirectory', () => {
       return this.fileSystemManager.getHomeDirectory();
@@ -320,15 +340,19 @@ class AppShell {
       return this.fileSystemManager.getPathSeparator();
     });
 
-    this.ipcManager.handle('filesystem:joinPath', (event, ...segments: string[]) => {
+    this.ipcManager.handle('filesystem:joinPath', (_event, ...args: unknown[]) => {
+      const segments = args as string[];
       return this.fileSystemManager.joinPath(...segments);
     });
 
-    this.ipcManager.handle('filesystem:resolvePath', (event, filePath: string) => {
+    this.ipcManager.handle('filesystem:resolvePath', (_event, ...args: unknown[]) => {
+      const filePath = args[0] as string;
       return this.fileSystemManager.resolvePath(filePath);
     });
 
-    this.ipcManager.handle('filesystem:relativePath', (event, from: string, to: string) => {
+    this.ipcManager.handle('filesystem:relativePath', (_event, ...args: unknown[]) => {
+      const from = args[0] as string;
+      const to = args[1] as string;
       return this.fileSystemManager.relativePath(from, to);
     });
 
@@ -354,11 +378,13 @@ class AppShell {
     });
 
     // Marketplace management
-    this.ipcManager.handle('marketplace:search', async (event, query: any) => {
+    this.ipcManager.handle('marketplace:search', async (_event, ...args: unknown[]) => {
+      const query = args[0] as MarketplaceSearchQuery;
       return this.marketplaceService.searchPlugins(query);
     });
 
-    this.ipcManager.handle('marketplace:getPlugin', async (event, pluginId: string) => {
+    this.ipcManager.handle('marketplace:getPlugin', async (_event, ...args: unknown[]) => {
+      const pluginId = args[0] as string;
       return this.marketplaceService.getPlugin(pluginId);
     });
 
@@ -366,18 +392,19 @@ class AppShell {
       return this.marketplaceService.getCategories();
     });
 
-    this.ipcManager.handle(
-      'marketplace:install',
-      async (event, pluginId: string, version?: string) => {
-        await this.marketplaceService.installPlugin(pluginId, version);
-      }
-    );
+    this.ipcManager.handle('marketplace:install', async (_event, ...args: unknown[]) => {
+      const pluginId = args[0] as string;
+      const version = args[1] as string | undefined;
+      await this.marketplaceService.installPlugin(pluginId, version);
+    });
 
-    this.ipcManager.handle('marketplace:update', async (event, pluginId: string) => {
+    this.ipcManager.handle('marketplace:update', async (_event, ...args: unknown[]) => {
+      const pluginId = args[0] as string;
       await this.marketplaceService.updatePlugin(pluginId);
     });
 
-    this.ipcManager.handle('marketplace:uninstall', async (event, pluginId: string) => {
+    this.ipcManager.handle('marketplace:uninstall', async (_event, ...args: unknown[]) => {
+      const pluginId = args[0] as string;
       await this.marketplaceService.uninstallPlugin(pluginId);
     });
 
@@ -389,22 +416,67 @@ class AppShell {
       return this.marketplaceService.checkForUpdates();
     });
 
-    this.ipcManager.handle('marketplace:getInstallationStatus', async (event, pluginId: string) => {
-      return this.marketplaceService.getInstallationStatus(pluginId);
-    });
+    this.ipcManager.handle(
+      'marketplace:getInstallationStatus',
+      async (_event, ...args: unknown[]) => {
+        const pluginId = args[0] as string;
+        return this.marketplaceService.getInstallationStatus(pluginId);
+      }
+    );
+  }
+
+  private getAccelerator(key: string): string {
+    if (!key) return '';
+
+    if (process.platform === 'darwin') {
+      // Handle macOS-specific mappings
+      return key
+        .replace(/CommandOrControl\+/g, 'Command+')
+        .replace(/Ctrl\+/g, 'Command+')
+        .replace(/Alt\+/g, 'Option+');
+    } else {
+      // Handle Windows/Linux mappings
+      return key
+        .replace(/CommandOrControl\+/g, 'Control+')
+        .replace(/Cmd\+/g, 'Control+')
+        .replace(/Option\+/g, 'Alt+');
+    }
   }
 
   private setupApplicationMenu(): void {
     // Create a simplified menu to avoid complex TypeScript template issues
-    const template = [
+    // Get all commands
+    const allCommands = this.commandManager.getAllCommands();
+    // First get commands with shortcuts for the Commands menu
+    const commandsWithShortcuts = allCommands.filter(cmd => cmd.accelerator);
+
+    // Create template
+    const template: Electron.MenuItemConstructorOptions[] = [
       {
         label: 'File',
         submenu: [
           {
             label: 'Quit',
             accelerator: this.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
-            click: () => {
-              app.quit();
+            click: async () => {
+              const focusedWindow = BrowserWindow.getFocusedWindow();
+              if (!focusedWindow) {
+                app.quit();
+                return;
+              }
+
+              const { response } = await dialog.showMessageBox(focusedWindow, {
+                type: 'question',
+                buttons: ['Yes', 'No'],
+                defaultId: 1,
+                title: 'Confirm Quit',
+                message: 'Are you sure you want to quit?',
+              });
+
+              if (response === 0) {
+                // Yes
+                app.quit();
+              }
             },
           },
         ],
@@ -422,6 +494,10 @@ class AppShell {
         ],
       },
       {
+        label: 'Window',
+        submenu: [{ role: 'minimize' }, { role: 'close' }],
+      },
+      {
         label: 'View',
         submenu: [
           { role: 'reload' },
@@ -433,15 +509,65 @@ class AppShell {
           { role: 'zoomOut' },
           { type: 'separator' },
           { role: 'togglefullscreen' },
+          { type: 'separator' },
+          {
+            label: 'Command Palette',
+            accelerator: process.platform === 'darwin' ? 'Cmd+Shift+P' : 'Ctrl+Shift+P',
+            click: () => {
+              const focusedWindow = BrowserWindow.getFocusedWindow();
+              if (focusedWindow) {
+                focusedWindow.webContents.send('commandPalette:toggle');
+              }
+            },
+          },
+          { type: 'separator' },
+          ...commandsWithShortcuts
+            .filter(cmd => cmd.category === 'View' && cmd.command !== 'view.commandPalette')
+            .map(cmd => ({
+              label: cmd.title,
+              accelerator: this.getAccelerator(cmd.accelerator || ''),
+              click: () => this.commandManager.executeCommand(cmd.command),
+            })),
         ],
       },
       {
-        label: 'Window',
-        submenu: [{ role: 'minimize' }, { role: 'close' }],
+        label: 'Terminal',
+        submenu: [
+          ...commandsWithShortcuts
+            .filter(cmd => cmd.category === 'Terminal')
+            .map(cmd => ({
+              label: cmd.title,
+              accelerator: this.getAccelerator(cmd.accelerator || ''),
+              click: () => this.commandManager.executeCommand(cmd.command),
+            })),
+        ],
+      },
+      {
+        label: 'Theme',
+        submenu: [
+          ...commandsWithShortcuts
+            .filter(cmd => cmd.category === 'Theme')
+            .map(cmd => ({
+              label: cmd.title,
+              accelerator: this.getAccelerator(cmd.accelerator || ''),
+              click: () => this.commandManager.executeCommand(cmd.command),
+            })),
+        ],
       },
       {
         label: 'Help',
         submenu: [
+          ...commandsWithShortcuts
+            .filter(
+              cmd =>
+                cmd.category === 'View' || cmd.category === 'Terminal' || cmd.category === 'Theme'
+            )
+            .map(cmd => ({
+              label: cmd.title,
+              accelerator: this.getAccelerator(cmd.accelerator || ''),
+              click: () => this.commandManager.executeCommand(cmd.command),
+            })),
+          { type: 'separator' },
           {
             label: 'About',
             click: async () => {
@@ -452,7 +578,7 @@ class AppShell {
       },
     ];
 
-    const menu = Menu.buildFromTemplate(template as Electron.MenuItemConstructorOptions[]);
+    const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
   }
 }

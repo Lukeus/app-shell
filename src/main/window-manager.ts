@@ -1,6 +1,6 @@
 import { BrowserWindow, screen } from 'electron';
 import * as path from 'path';
-import { WindowState } from '../types';
+import { WindowState } from '../schemas';
 import { SettingsManager } from './settings-manager';
 import { Logger } from './logger';
 

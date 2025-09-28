@@ -33,6 +33,7 @@ export interface Command {
   category?: string;
   icon?: string;
   when?: string; // Context condition
+  accelerator?: string; // Keyboard shortcut in Electron accelerator format
 }
 
 export interface CommandRegistration extends Command {
@@ -304,7 +305,7 @@ export enum FileType {
 export interface AppError extends Error {
   code?: string;
   extensionId?: string;
-  details?: any;
+  details?: unknown;
 }
 
 // Extension lifecycle

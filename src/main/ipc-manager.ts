@@ -3,7 +3,10 @@ import { Logger } from './logger';
 
 export class IPCManager {
   private logger: Logger;
-  private handlers: Map<string, (event: IpcMainInvokeEvent, ...args: any[]) => Promise<any> | any>;
+  private handlers: Map<
+    string,
+    (event: IpcMainInvokeEvent, ...args: unknown[]) => Promise<unknown> | unknown
+  >;
 
   constructor() {
     this.logger = new Logger('IPCManager');
@@ -12,7 +15,7 @@ export class IPCManager {
 
   handle(
     channel: string,
-    handler: (event: IpcMainInvokeEvent, ...args: any[]) => Promise<any> | any
+    handler: (event: IpcMainInvokeEvent, ...args: unknown[]) => Promise<unknown> | unknown
   ): void {
     try {
       if (this.handlers.has(channel)) {
@@ -21,7 +24,7 @@ export class IPCManager {
 
       this.handlers.set(channel, handler);
 
-      ipcMain.handle(channel, async (event: IpcMainInvokeEvent, ...args: any[]) => {
+      ipcMain.handle(channel, async (event: IpcMainInvokeEvent, ...args: unknown[]) => {
         try {
           this.logger.debug(`Handling IPC call: ${channel}`, args);
           const result = await handler(event, ...args);
