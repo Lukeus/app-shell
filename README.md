@@ -1,13 +1,13 @@
 # App Shell
 
-[![CI](https://github.com/Lukeus/app-shell/workflows/CI/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/ci.yml)
-[![Electron Release](https://github.com/Lukeus/app-shell/workflows/Electron%20Release/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/electron-release.yml)
-[![CodeQL](https://github.com/Lukeus/app-shell/workflows/CodeQL/badge.svg)](https://github.com/Lukeus/app-shell/actions/workflows/codeql.yml)
+[![CI](https://github.com/lukeusadams/app-shell/workflows/CI/badge.svg)](https://github.com/lukeusadams/app-shell/actions/workflows/ci.yml)
+[![Electron Release](https://github.com/lukeusadams/app-shell/workflows/Electron%20Release/badge.svg)](https://github.com/lukeusadams/app-shell/actions/workflows/electron-release.yml)
+[![CodeQL](https://github.com/lukeusadams/app-shell/workflows/CodeQL/badge.svg)](https://github.com/lukeusadams/app-shell/actions/workflows/codeql.yml)
 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Lukeus/app-shell?sort=semver&logo=github)](https://github.com/Lukeus/app-shell/releases/latest)
-[![GitHub all releases](https://img.shields.io/github/downloads/Lukeus/app-shell/total?logo=github)](https://github.com/Lukeus/app-shell/releases)
-[![GitHub issues](https://img.shields.io/github/issues/Lukeus/app-shell?logo=github)](https://github.com/Lukeus/app-shell/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/Lukeus/app-shell?logo=github)](https://github.com/Lukeus/app-shell/pulls)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/lukeusadams/app-shell?sort=semver&logo=github)](https://github.com/lukeusadams/app-shell/releases/latest)
+[![GitHub all releases](https://img.shields.io/github/downloads/lukeusadams/app-shell/total?logo=github)](https://github.com/lukeusadams/app-shell/releases)
+[![GitHub issues](https://img.shields.io/github/issues/lukeusadams/app-shell?logo=github)](https://github.com/lukeusadams/app-shell/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/lukeusadams/app-shell?logo=github)](https://github.com/lukeusadams/app-shell/pulls)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-191970?logo=electron&logoColor=white)](https://www.electronjs.org/)
@@ -25,11 +25,11 @@ An enterprise-grade, cross-platform Electron application shell with extension su
 
 ## Preview
 
-Comming soon.
+Coming soon.
 
 ## 📥 Download
 
-[![Latest Release](https://img.shields.io/github/v/release/Lukeus/app-shell?label=Download&logo=github&style=for-the-badge)](https://github.com/Lukeus/app-shell/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/lukeusadams/app-shell?label=Download&logo=github&style=for-the-badge)](https://github.com/lukeusadams/app-shell/releases/latest)
 
 **Quick Downloads:**
 
@@ -362,18 +362,48 @@ sequenceDiagram
     Note over User,UI: Interactive Terminal Session
 ```
 
+## Project Status
+
+### ✅ Completed (Foundation)
+
+- Project structure and build configuration
+- TypeScript definitions and interfaces
+- Main process architecture with managers
+- Cross-platform window management
+- Settings persistence system
+- Terminal integration framework
+- Basic extension system architecture
+- Secure IPC communication bridge
+- Logging system with file rotation
+- Theme system foundation
+
+### 🔧 In Progress
+
+- TypeScript compilation errors resolution
+- Extension loading implementation
+- Command palette system enhancements
+
+### 📋 Next Up
+
+1. Complete extension system implementation
+2. Build command palette with fuzzy search
+3. Create settings UI with dynamic tabs
+4. Implement extension store interface
+5. Add comprehensive testing suite
+6. Create extension development documentation
+
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js >= 16.15.0
-- pnpm >= 8.0.0
+- Node.js >= 18.0.0 (v20 LTS recommended)
+- pnpm >= 8.0.0 (v8.14 or later recommended)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/Lukeus/app-shell.git
+git clone https://github.com/lukeusadams/app-shell.git
 cd app-shell
 
 # Install dependencies
@@ -556,7 +586,7 @@ my-extension/
     ]
   },
   "engines": {
-    "app-shell": "^1.0.0"
+    "app-shell": "^1.0.0" // Update to match your app-shell version
   }
 }
 ```
@@ -782,20 +812,37 @@ MIT License - see LICENSE file for details.
 
 ## Roadmap
 
+### Phase 1: Core Features (In Progress)
+
+- [x] Basic extension system architecture
+- [x] Terminal integration framework
+- [x] Theme system foundation
+- [ ] Complete extension system implementation
+- [ ] Command palette with fuzzy search
+- [ ] Settings UI with dynamic tabs
+
+### Phase 2: Extension Ecosystem
+
 - [ ] Plugin marketplace integration
-- [ ] Advanced theme system
+- [ ] Extension store interface
+- [ ] Developer documentation
+- [ ] Sample extension templates
+- [ ] Extension debugging support
+
+### Phase 3: Advanced Features
+
 - [ ] Multiple terminal tabs
 - [ ] Workspace support
 - [ ] Git integration
 - [ ] File explorer
-- [ ] Debugging support
-- [ ] Performance monitoring
+- [ ] Advanced theme system
+- [ ] Performance monitoring dashboard
 
 ## Support
 
 - **Issues**: GitHub Issues
 - **Discussions**: GitHub Discussions
-- **Documentation**: [Wiki](https://github.com/Lukeus/app-shell/wiki)
+- **Documentation**: [Wiki](https://github.com/lukeusadams/app-shell/wiki)
 
 ---
 

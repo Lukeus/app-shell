@@ -128,9 +128,9 @@ export const ExplorerView: React.FC = () => {
   const loadFileTree = async (path: string, depth: number = 2) => {
     try {
       setError(null);
-      const tree = await window.electronAPI?.getFileTree?.(path, depth);
+      const tree = (await window.electronAPI?.getFileTree?.(path, depth)) as FileItem | null;
       if (tree) {
-        setFileTree(tree);
+        setFileTree(tree as FileItem);
       }
     } catch (err) {
       setError('Failed to load directory contents');
@@ -179,7 +179,9 @@ export const ExplorerView: React.FC = () => {
 
         // Toggle expansion
         item.isExpanded = !item.isExpanded;
-        setFileTree({ ...fileTree } as FileItem); // Force re-render
+        if (fileTree) {
+          setFileTree({ ...(fileTree as FileItem) }); // Force re-render
+        }
       } catch (err) {
         console.error('Error expanding directory:', err);
       }
@@ -224,7 +226,9 @@ export const ExplorerView: React.FC = () => {
           // Update the item in the tree
           item.name = newName;
           item.path = newPath;
-          setFileTree({ ...fileTree } as FileItem);
+          if (fileTree) {
+            setFileTree({ ...(fileTree as FileItem) });
+          }
         }
       } catch (err) {
         console.error('Rename error:', err);
