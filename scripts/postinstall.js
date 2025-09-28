@@ -26,4 +26,13 @@ if (!isCI) {
       ')'
   );
   console.log('Platform:', os.platform(), 'Arch:', os.arch());
+  
+  // In CI, verify Electron installation for tests
+  try {
+    require('electron');
+    console.log('✅ Electron binaries are available');
+  } catch (error) {
+    console.log('⚠️  Electron binaries not found, but this is expected in CI');
+    console.log('Tests will use Playwright\'s bundled Electron if available');
+  }
 }
