@@ -6,6 +6,7 @@ import { WebTerminalManager } from './web-terminal-manager';
 import { IPCManager } from './ipc-manager';
 import { CommandManager } from './managers/command-manager';
 import { MarketplaceService } from './marketplace-service';
+import { FileSystemManager } from './file-system-manager';
 import { Logger } from './logger';
 import { Platform } from '../types';
 
@@ -17,6 +18,7 @@ class AppShell {
   private ipcManager: IPCManager;
   private commandManager: CommandManager;
   private marketplaceService: MarketplaceService;
+  private fileSystemManager: FileSystemManager;
   private logger: Logger;
   private platform: Platform;
 
@@ -33,6 +35,7 @@ class AppShell {
     this.ipcManager = new IPCManager();
     this.commandManager = new CommandManager(this.logger);
     this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
+    this.fileSystemManager = new FileSystemManager();
 
     this.setupAppEventListeners();
     this.setupIPCHandlers();
@@ -44,6 +47,9 @@ class AppShell {
 
       // Initialize settings
       await this.settingsManager.init();
+
+      // Initialize file system manager
+      await this.fileSystemManager.init();
 
       // Create main window
       await this.windowManager.createMainWindow();
@@ -105,6 +111,9 @@ class AppShell {
 
         // Dispose of command manager
         this.commandManager.dispose();
+
+        // Dispose of file system manager
+        await this.fileSystemManager.dispose();
       } catch (error) {
         this.logger.error('Error during app shutdown', error);
       }
@@ -225,14 +234,102 @@ class AppShell {
     // Command execution is handled by CommandManager directly via IPC
 
     // File system operations
-    this.ipcManager.handle('fs:showOpenDialog', async (options: any) => {
+    this.ipcManager.handle('fs:showOpenDialog', async (event, options: any) => {
       const result = await dialog.showOpenDialog(options);
       return result;
     });
 
-    this.ipcManager.handle('fs:showSaveDialog', async (options: any) => {
+    this.ipcManager.handle('fs:showSaveDialog', async (event, options: any) => {
       const result = await dialog.showSaveDialog(options);
       return result;
+    });
+
+    // File system manager operations
+    this.ipcManager.handle('filesystem:readFile', async (event, filePath: string) => {
+      return this.fileSystemManager.readFile(filePath);
+    });
+
+    this.ipcManager.handle(
+      'filesystem:readFileText',
+      async (event, filePath: string, encoding?: BufferEncoding) => {
+        return this.fileSystemManager.readFileText(filePath, encoding);
+      }
+    );
+
+    this.ipcManager.handle(
+      'filesystem:writeFile',
+      async (event, filePath: string, data: Uint8Array) => {
+        await this.fileSystemManager.writeFile(filePath, data);
+      }
+    );
+
+    this.ipcManager.handle(
+      'filesystem:writeFileText',
+      async (event, filePath: string, content: string, encoding?: BufferEncoding) => {
+        await this.fileSystemManager.writeFileText(filePath, content, encoding);
+      }
+    );
+
+    this.ipcManager.handle('filesystem:createDirectory', async (event, dirPath: string) => {
+      await this.fileSystemManager.createDirectory(dirPath);
+    });
+
+    this.ipcManager.handle('filesystem:deleteFile', async (event, filePath: string) => {
+      await this.fileSystemManager.deleteFile(filePath);
+    });
+
+    this.ipcManager.handle('filesystem:deleteDirectory', async (event, dirPath: string) => {
+      await this.fileSystemManager.deleteDirectory(dirPath);
+    });
+
+    this.ipcManager.handle('filesystem:exists', async (event, filePath: string) => {
+      return this.fileSystemManager.exists(filePath);
+    });
+
+    this.ipcManager.handle('filesystem:stat', async (event, filePath: string) => {
+      return this.fileSystemManager.stat(filePath);
+    });
+
+    this.ipcManager.handle('filesystem:readDirectory', async (event, dirPath: string) => {
+      return this.fileSystemManager.readDirectory(dirPath);
+    });
+
+    this.ipcManager.handle(
+      'filesystem:getFileTree',
+      async (event, rootPath: string, depth?: number) => {
+        return this.fileSystemManager.getFileTree(rootPath, depth);
+      }
+    );
+
+    this.ipcManager.handle('filesystem:rename', async (event, oldPath: string, newPath: string) => {
+      await this.fileSystemManager.rename(oldPath, newPath);
+    });
+
+    this.ipcManager.handle(
+      'filesystem:copyFile',
+      async (event, sourcePath: string, targetPath: string) => {
+        await this.fileSystemManager.copyFile(sourcePath, targetPath);
+      }
+    );
+
+    this.ipcManager.handle('filesystem:getHomeDirectory', () => {
+      return this.fileSystemManager.getHomeDirectory();
+    });
+
+    this.ipcManager.handle('filesystem:getPathSeparator', () => {
+      return this.fileSystemManager.getPathSeparator();
+    });
+
+    this.ipcManager.handle('filesystem:joinPath', (event, ...segments: string[]) => {
+      return this.fileSystemManager.joinPath(...segments);
+    });
+
+    this.ipcManager.handle('filesystem:resolvePath', (event, filePath: string) => {
+      return this.fileSystemManager.resolvePath(filePath);
+    });
+
+    this.ipcManager.handle('filesystem:relativePath', (event, from: string, to: string) => {
+      return this.fileSystemManager.relativePath(from, to);
     });
 
     // Platform information
@@ -257,7 +354,7 @@ class AppShell {
     });
 
     // Marketplace management
-    this.ipcManager.handle('marketplace:search', async (event, query) => {
+    this.ipcManager.handle('marketplace:search', async (event, query: any) => {
       return this.marketplaceService.searchPlugins(query);
     });
 
