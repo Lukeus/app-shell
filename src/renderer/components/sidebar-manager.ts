@@ -125,7 +125,8 @@ export class SidebarManager {
 
   private async loadCurrentTheme(select: HTMLSelectElement): Promise<void> {
     try {
-      const currentTheme = (await window.electronAPI?.getSetting('theme')) || 'builtin.dark';
+      const currentTheme =
+        ((await window.electronAPI?.getSetting('theme')) as string) || 'builtin.dark';
       select.value = currentTheme;
     } catch (error) {
       console.error('Failed to load current theme:', error);
