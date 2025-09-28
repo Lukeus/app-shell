@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import component styles */
+@import './file-explorer.css';
+
 /* CSS Custom Properties for VS Code Theme */
 :root {
   --color-vscode-bg-primary: #1e1e1e;
@@ -231,4 +234,89 @@ input:focus-visible {
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Command Palette Utility Classes */
+.bg-vscode-accent {
+  background-color: var(--color-vscode-accent-blue);
+}
+
+.text-vscode-accent {
+  color: var(--color-vscode-accent-blue);
+}
+
+.border-vscode-accent {
+  border-color: var(--color-vscode-accent-blue);
+}
+
+.border-l-vscode-accent {
+  border-left-color: var(--color-vscode-accent-blue);
+}
+
+.bg-vscode-bg-primary {
+  background-color: var(--color-vscode-bg-primary);
+}
+
+.bg-vscode-bg-secondary {
+  background-color: var(--color-vscode-bg-secondary);
+}
+
+.bg-vscode-bg-tertiary {
+  background-color: var(--color-vscode-bg-tertiary);
+}
+
+.text-vscode-fg-primary {
+  color: var(--color-vscode-fg-primary);
+}
+
+.text-vscode-fg-secondary {
+  color: var(--color-vscode-fg-secondary);
+}
+
+.text-vscode-fg-muted {
+  color: var(--color-vscode-fg-muted);
+}
+
+.placeholder-vscode-fg-muted::placeholder {
+  color: var(--color-vscode-fg-muted);
+}
+
+.border-vscode-border {
+  border-color: var(--color-vscode-border);
+}
+
+.bg-vscode-hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bg-vscode-selection {
+  background-color: rgba(14, 99, 156, 0.25);
+}
+
+.scrollbar-thumb-vscode-border {
+  scrollbar-color: var(--color-vscode-border) transparent;
+}
+
+.scrollbar-thumb-vscode-border::-webkit-scrollbar-thumb {
+  background-color: var(--color-vscode-border);
+}
+
+.border-l-3 {
+  border-left-width: 3px;
+}
+
+/* Command Palette Animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out;
 }
