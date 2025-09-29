@@ -76,8 +76,27 @@ export const Terminal: React.FC = () => {
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Fit terminal to container
+    // Initial fit attempt (may not work if container isn't sized yet)
     fitAddon.fit();
+
+    // Set up ResizeObserver to watch for container size changes
+    let resizeObserver: ResizeObserver | null = null;
+    if (window.ResizeObserver && terminalRef.current) {
+      resizeObserver = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          // Only resize if the container has meaningful dimensions
+          if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+            // Debounce the resize to avoid excessive calls
+            setTimeout(() => {
+              if (fitAddonRef.current) {
+                fitAddonRef.current.fit();
+              }
+            }, 50);
+          }
+        }
+      });
+      resizeObserver.observe(terminalRef.current);
+    }
 
     // Setup terminal process connection
     const setupTerminal = async () => {
@@ -107,6 +126,26 @@ export const Terminal: React.FC = () => {
 
     setupTerminal();
 
+    // Additional resize trigger when terminal becomes visible
+    // This helps with the initial load sizing issue
+    const checkVisibilityAndResize = () => {
+      if (terminalRef.current && fitAddonRef.current) {
+        const container = terminalRef.current;
+        const rect = container.getBoundingClientRect();
+
+        // If container is visible and has size, ensure terminal is fitted
+        if (rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight) {
+          setTimeout(() => {
+            fitAddonRef.current?.fit();
+          }, 100);
+        }
+      }
+    };
+
+    // Check visibility periodically for the first few seconds after mount
+    const visibilityCheckInterval = setInterval(checkVisibilityAndResize, 500);
+    setTimeout(() => clearInterval(visibilityCheckInterval), 3000);
+
     // Handle window resize
     const handleResize = () => {
       fitAddon.fit();
@@ -117,6 +156,12 @@ export const Terminal: React.FC = () => {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (visibilityCheckInterval) {
+        clearInterval(visibilityCheckInterval);
+      }
       terminal.dispose();
     };
   }, []);
@@ -125,14 +170,25 @@ export const Terminal: React.FC = () => {
   useEffect(() => {
     const resizeTerminal = () => {
       if (fitAddonRef.current && !state.panelCollapsed) {
-        setTimeout(() => {
-          fitAddonRef.current?.fit();
-        }, 350); // Wait for animation to complete
+        // Multiple resize attempts with different timings to ensure proper layout
+        const resizeAttempts = [0, 100, 350, 500]; // Immediate, fast, animation complete, safety
+
+        resizeAttempts.forEach(delay => {
+          setTimeout(() => {
+            if (fitAddonRef.current && terminalRef.current) {
+              // Check if container has proper dimensions before fitting
+              const container = terminalRef.current;
+              if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+                fitAddonRef.current.fit();
+              }
+            }
+          }, delay);
+        });
       }
     };
 
     resizeTerminal();
-  }, [state.panelCollapsed, state.panelHeight]);
+  }, [state.panelCollapsed, state.panelHeight, state.activePanel]); // Also watch activePanel changes
 
   return (
     <div className="h-full w-full">
