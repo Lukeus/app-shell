@@ -5,25 +5,13 @@ export const SettingsView: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const [fontSize, setFontSize] = useState(14);
 
-  useEffect(() => {
-    // Load current theme from electron
-    const loadCurrentTheme = async () => {
-      try {
-        const currentTheme =
-          ((await window.electronAPI?.getSetting('theme')) as string) || 'builtin.dark';
-        dispatch({ type: 'SET_THEME', payload: currentTheme });
-      } catch (error) {
-        console.error('Failed to load current theme:', error);
-      }
-    };
-
-    loadCurrentTheme();
-  }, [dispatch]);
+  // Theme is now loaded by ThemeManager in App.tsx
+  // No need to duplicate the loading logic here
 
   const handleThemeChange = async (theme: string) => {
     try {
+      // Apply theme - this will trigger the theme change event and update the UI automatically
       await window.electronAPI?.applyTheme(theme);
-      dispatch({ type: 'SET_THEME', payload: theme });
     } catch (error) {
       console.error('Failed to apply theme:', error);
     }

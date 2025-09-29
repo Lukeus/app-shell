@@ -9,6 +9,12 @@ import {
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
 
+// Theme change event data interface
+interface ThemeChangeData {
+  themeId: string;
+  theme: Theme;
+}
+
 // Define the API interface
 interface TerminalInfo {
   id: string;
@@ -39,6 +45,9 @@ interface ElectronAPI {
   resizeTerminal: (terminalId: string, cols: number, rows: number) => void;
   killTerminal: (terminalId: string) => void;
   onTerminalData: (terminalId: string, callback: (data: string) => void) => void;
+
+  // Theme
+  onThemeChange: (callback: (themeData: ThemeChangeData) => void) => void;
 
   // Extensions
   getExtensions: () => Promise<Extension[]>;
@@ -139,6 +148,13 @@ const electronAPI: ElectronAPI = {
   },
   onTerminalData: (terminalId: string, callback: (data: string) => void) => {
     ipcRenderer.on(`terminal:data:${terminalId}`, (event, data) => {
+      callback(data);
+    });
+  },
+
+  // Theme change listener
+  onThemeChange: (callback: (themeData: ThemeChangeData) => void) => {
+    ipcRenderer.on('extension:themeChanged', (event, data) => {
       callback(data);
     });
   },
