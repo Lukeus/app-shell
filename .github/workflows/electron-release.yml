@@ -319,8 +319,8 @@ jobs:
       - name: Package for Linux
         if: matrix.platform == 'linux'
         run: |
-          # Build without publishing to avoid auto-publish issues
-          pnpm run build && electron-builder --linux --publish never
+          # Use pnpm exec to ensure electron-builder is found in PATH
+          pnpm exec electron-builder --linux --publish never
           echo "📦 Linux packages created:"
           ls -la release/build/
         env:
@@ -331,8 +331,8 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          # Build without publishing to avoid auto-publish issues
-          pnpm run build && electron-builder --win --publish never
+          # Use pnpm exec to ensure electron-builder is found in PATH
+          pnpm exec electron-builder --win --publish never
           Write-Host "📦 Windows packages created:"
           Get-ChildItem release/build/
         env:
@@ -343,8 +343,8 @@ jobs:
       - name: Package for macOS
         if: matrix.platform == 'macos'
         run: |
-          # Build without publishing to avoid auto-publish issues
-          pnpm run build && electron-builder --mac --publish never
+          # Use pnpm exec to ensure electron-builder is found in PATH
+          pnpm exec electron-builder --mac --publish never
           echo "📦 macOS packages created:"
           ls -la release/build/
         env:
