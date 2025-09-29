@@ -42,7 +42,7 @@ jobs:
             echo "should_release=true" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
             echo "CI passed - auto release enabled"
-            echo "should_release=false" >> $GITHUB_OUTPUT  # Disable auto-release for now
+            echo "should_release=true" >> $GITHUB_OUTPUT  # Enable auto-release with branch protection
           else
             echo "Release conditions not met"
             echo "should_release=false" >> $GITHUB_OUTPUT
@@ -55,19 +55,41 @@ jobs:
             VERSION="${{ inputs.version }}"
             PRERELEASE="${{ inputs.prerelease }}"
           else
-            # Auto-increment patch version (when auto-release is enabled)
-            VERSION="1.0.0"  # Default for now
+            # Auto-increment patch version from current package.json
+            echo "🔍 Determining next auto-release version..."
+            
+            # Get current version from package.json
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Auto-increment patch version
+            IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+            MAJOR=${VERSION_PARTS[0]}
+            MINOR=${VERSION_PARTS[1]}
+            PATCH=${VERSION_PARTS[2]}
+            NEW_PATCH=$((PATCH + 1))
+            VERSION="$MAJOR.$MINOR.$NEW_PATCH"
             PRERELEASE="false"
+            
+            echo "Auto-incremented to: $VERSION"
           fi
 
           TAG="v$VERSION"
+          
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "❌ Error: Tag $TAG already exists!"
+            echo "Please use a different version or delete the existing tag first."
+            exit 1
+          fi
+          
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
 
-          echo "Release version: $VERSION"
-          echo "Tag: $TAG"
-          echo "Pre-release: $PRERELEASE"
+          echo "✅ Release version: $VERSION"
+          echo "✅ Tag: $TAG"
+          echo "✅ Pre-release: $PRERELEASE"
 
   # Create tag and update version
   create-tag:
@@ -83,7 +105,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -101,6 +123,7 @@ jobs:
         run: |
           VERSION="${{ needs.check-trigger.outputs.version }}"
           TAG="${{ needs.check-trigger.outputs.tag }}"
+          RELEASE_BRANCH="release/$TAG"
 
           echo "Updating package.json to version $VERSION"
           npm version $VERSION --no-git-tag-version
@@ -109,16 +132,73 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+          # Create release branch from current main
+          git checkout -b $RELEASE_BRANCH
+
           # Commit version update
           git add package.json
           git commit -m "chore: bump version to $VERSION [skip ci]"
 
-          # Create and push tag
-          git tag -a $TAG -m "Release $TAG"
-          git push origin main
-          git push origin $TAG
+          # Push release branch
+          if git push origin $RELEASE_BRANCH; then
+            echo "✅ Successfully pushed release branch $RELEASE_BRANCH"
+          else
+            echo "❌ Failed to push release branch $RELEASE_BRANCH"
+            exit 1
+          fi
 
-          echo "✅ Created tag $TAG and updated version to $VERSION"
+          # Create tag from release branch
+          if git tag -a $TAG -m "Release $TAG"; then
+            echo "✅ Successfully created tag $TAG"
+          else
+            echo "❌ Failed to create tag $TAG"
+            exit 1
+          fi
+
+          # Push tag
+          if git push origin $TAG; then
+            echo "✅ Successfully pushed tag $TAG"
+          else
+            echo "❌ Failed to push tag $TAG"
+            # Clean up: delete local tag if push failed
+            git tag -d $TAG
+            exit 1
+          fi
+
+          echo "✅ Created tag $TAG and release branch $RELEASE_BRANCH"
+          echo "release_branch=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+        id: version_update
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.version_update.outputs.release_branch }}
+          base: main
+          title: '🚀 Release ${{ needs.check-trigger.outputs.tag }}'
+          body: |
+            ## 🚀 Release ${{ needs.check-trigger.outputs.tag }}
+            
+            This PR contains the version bump for the upcoming release.
+            
+            ### Changes
+            - 📦 Bump version to `${{ needs.check-trigger.outputs.version }}` in package.json
+            - 🏷️ Tag `${{ needs.check-trigger.outputs.tag }}` has been created
+            
+            ### Release Process
+            1. ✅ Version updated and tagged
+            2. 🔄 Building packages for all platforms
+            3. 📝 GitHub release will be created automatically
+            
+            **This PR can be merged immediately** - the release process is already underway.
+            
+            ---
+            
+            _This PR was created automatically by the release workflow._
+          labels: |
+            release
+            automated
+          draft: false
 
   # Build packages for all platforms
   build-packages:
