@@ -33,16 +33,6 @@ Coming soon.
 
 **Quick Downloads:**
 
-| Platform | Package [...]  
-| ------------------------------------------------------------------------------------ | -----------------------------------------------------------------------------------------------------------[...]  
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white) | [.exe Installer](https://github.com/Lukeus/app-shell/releases/latest) • [.msi Package](https://github.com/Lukeus/app-shell/releases/latest)  
-| ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white) | [.dmg Disk Image](https://github.com/Lukeus/app-shell/releases/latest) • [.zip Archive](https://github.com/Lukeus/app-shell/releases/latest)  
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black) | [.AppImage](https://github.com/Lukeus/app-shell/releases/latest) • [.deb](https://github.com/Lukeus/app-shell/releases/latest)
-
-> **Note:** Releases are automatically built and published when changes are pushed to the main branch. All packages are code-signed and verified.
-
-**Quick Downloads:**
-
 | Platform                                                                             | Package                                                                                                                                                                                                                                                     | Architecture |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white) | [.exe Installer](https://github.com/Lukeus/app-shell/releases/latest) • [.msi Package](https://github.com/Lukeus/app-shell/releases/latest)                                                                                                                 | x64, ARM64   |
