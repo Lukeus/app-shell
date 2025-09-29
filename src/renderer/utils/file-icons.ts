@@ -2,6 +2,8 @@
  * Utility helpers for file display
  */
 
+import { FileType } from '../../types';
+
 /**
  * Extracts file extension from filename.
  *
@@ -62,4 +64,170 @@ export function formatFileSize(bytes: number): string {
   }
 
   return `${formatted} ${sizes[i]}`;
+}
+
+/**
+ * Formats a timestamp to a human-readable date string
+ */
+export function formatDate(timestamp: number): string {
+  try {
+    const date = new Date(timestamp);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+
+    // Use Intl.DateTimeFormat for localized formatting
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return 'Invalid Date';
+  }
+}
+
+/**
+ * Icon information for file display
+ */
+export interface FileIconInfo {
+  icon: string;
+  color: string;
+  className?: string;
+}
+
+/**
+ * Gets an appropriate icon and color for a file based on its name and type
+ */
+export function getFileIcon(filename: string, type?: FileType): FileIconInfo {
+  const ext = getFileExtension(filename);
+  const baseName = filename.toLowerCase();
+
+  // Special files by name
+  if (baseName === 'package.json') {
+    return { icon: '📦', color: '#cb3837' };
+  }
+  if (baseName === 'readme.md' || baseName === 'readme.txt' || baseName === 'readme') {
+    return { icon: '📖', color: '#4078c0' };
+  }
+  if (baseName === '.gitignore') {
+    return { icon: '🚫', color: '#f14e32' };
+  }
+  if (baseName === 'dockerfile') {
+    return { icon: '🐳', color: '#0db7ed' };
+  }
+  if (baseName === 'license' || baseName === 'license.txt' || baseName === 'license.md') {
+    return { icon: '📜', color: '#6cc04a' };
+  }
+
+  // Directory
+  if (type === FileType.Directory || baseName.endsWith('/')) {
+    return { icon: '📁', color: '#dcb67a' };
+  }
+
+  // File extensions
+  switch (ext) {
+    // JavaScript/TypeScript
+    case 'js':
+      return { icon: '📄', color: '#f7df1e' };
+    case 'ts':
+      return { icon: '📄', color: '#3178c6' };
+    case 'tsx':
+    case 'jsx':
+      return { icon: '⚛️', color: '#61dafb' };
+    case 'json':
+      return { icon: '📋', color: '#cbcb41' };
+
+    // Web files
+    case 'html':
+    case 'htm':
+      return { icon: '🌐', color: '#e34c26' };
+    case 'css':
+      return { icon: '🎨', color: '#1572b6' };
+    case 'scss':
+    case 'sass':
+      return { icon: '🎨', color: '#cc6699' };
+
+    // Images
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+    case 'gif':
+    case 'bmp':
+    case 'webp':
+    case 'svg':
+      return { icon: '🖼️', color: '#4caf50' };
+
+    // Documents
+    case 'pdf':
+      return { icon: '📄', color: '#dc143c' };
+    case 'doc':
+    case 'docx':
+      return { icon: '📝', color: '#2b579a' };
+    case 'xls':
+    case 'xlsx':
+      return { icon: '📊', color: '#217346' };
+    case 'ppt':
+    case 'pptx':
+      return { icon: '📊', color: '#d24726' };
+
+    // Archives
+    case 'zip':
+    case 'rar':
+    case '7z':
+    case 'tar':
+    case 'gz':
+      return { icon: '🗜️', color: '#8e8e93' };
+
+    // Code files
+    case 'py':
+      return { icon: '🐍', color: '#3776ab' };
+    case 'java':
+      return { icon: '☕', color: '#ed8b00' };
+    case 'cpp':
+    case 'c':
+    case 'h':
+      return { icon: '⚙️', color: '#00599c' };
+    case 'cs':
+      return { icon: '🔷', color: '#239120' };
+    case 'php':
+      return { icon: '🐘', color: '#777bb4' };
+    case 'rb':
+      return { icon: '💎', color: '#cc342d' };
+    case 'go':
+      return { icon: '🐹', color: '#00add8' };
+    case 'rs':
+      return { icon: '🦀', color: '#dea584' };
+
+    // Markup/Config
+    case 'md':
+    case 'markdown':
+      return { icon: '📝', color: '#083fa1' };
+    case 'xml':
+      return { icon: '📄', color: '#ff6600' };
+    case 'yaml':
+    case 'yml':
+      return { icon: '⚙️', color: '#cb171e' };
+    case 'toml':
+      return { icon: '⚙️', color: '#9c4221' };
+    case 'ini':
+    case 'cfg':
+    case 'conf':
+      return { icon: '⚙️', color: '#6e6e6e' };
+
+    // Text files
+    case 'txt':
+    case 'text':
+      return { icon: '📄', color: '#89e051' };
+    case 'log':
+      return { icon: '📄', color: '#ff9500' };
+
+    // Default for unknown files
+    default:
+      return { icon: '📄', color: '#6e6e6e' };
+  }
 }
