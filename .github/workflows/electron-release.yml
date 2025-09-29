@@ -75,14 +75,14 @@ jobs:
           fi
 
           TAG="v$VERSION"
-          
+
           # Check if tag already exists
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "❌ Error: Tag $TAG already exists!"
             echo "Please use a different version or delete the existing tag first."
             exit 1
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
@@ -178,22 +178,22 @@ jobs:
           title: '🚀 Release ${{ needs.check-trigger.outputs.tag }}'
           body: |
             ## 🚀 Release ${{ needs.check-trigger.outputs.tag }}
-            
+
             This PR contains the version bump for the upcoming release.
-            
+
             ### Changes
             - 📦 Bump version to `${{ needs.check-trigger.outputs.version }}` in package.json
             - 🏷️ Tag `${{ needs.check-trigger.outputs.tag }}` has been created
-            
+
             ### Release Process
             1. ✅ Version updated and tagged
             2. 🔄 Building packages for all platforms
             3. 📝 GitHub release will be created automatically
-            
+
             **This PR can be merged immediately** - the release process is already underway.
-            
+
             ---
-            
+
             _This PR was created automatically by the release workflow._
           labels: |
             release
