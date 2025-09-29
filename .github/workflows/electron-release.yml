@@ -269,28 +269,38 @@ jobs:
       - name: Package for Linux
         if: matrix.platform == 'linux'
         run: |
-          pnpm run package:linux
+          # Build without publishing to avoid auto-publish issues
+          pnpm run build && electron-builder --linux --publish never
           echo "📦 Linux packages created:"
           ls -la release/build/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
       - name: Package for Windows
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          pnpm run package:win
+          # Build without publishing to avoid auto-publish issues
+          pnpm run build && electron-builder --win --publish never
           Write-Host "📦 Windows packages created:"
           Get-ChildItem release/build/
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
       - name: Package for macOS
         if: matrix.platform == 'macos'
         run: |
-          pnpm run package:mac
+          # Build without publishing to avoid auto-publish issues
+          pnpm run build && electron-builder --mac --publish never
           echo "📦 macOS packages created:"
           ls -la release/build/
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
 
       - name: Upload Linux artifacts
         if: matrix.platform == 'linux'
