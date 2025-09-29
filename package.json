@@ -171,7 +171,7 @@
     "copy-webpack-plugin": "^13.0.1",
     "cross-env": "^10.0.0",
     "css-loader": "^7.1.2",
-    "electron": "^38.1.2",
+    "electron": "^38.2.0",
     "electron-builder": "^26.0.12",
     "electron-rebuild": "^3.2.9",
     "eslint": "^9.36.0",
