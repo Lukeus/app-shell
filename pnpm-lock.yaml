@@ -16,9 +16,6 @@ importers:
       '@xterm/xterm':
         specifier: ^5.5.0
         version: 5.5.0
-      node-pty:
-        specifier: ^1.0.0
-        version: 1.0.0
       react:
         specifier: ^19.1.1
         version: 19.1.1
@@ -3886,12 +3883,6 @@ packages:
         integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==,
       }
 
-  nan@2.23.0:
-    resolution:
-      {
-        integrity: sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==,
-      }
-
   nanoid@3.3.11:
     resolution:
       {
@@ -3984,12 +3975,6 @@ packages:
       }
     engines: { node: ^12.13 || ^14.13 || >=16 }
     hasBin: true
-
-  node-pty@1.0.0:
-    resolution:
-      {
-        integrity: sha512-wtBMWWS7dFZm/VgqElrTvtfMq4GzJ6+edFI0Y0zyzygUSZMgZdraDUMUhCIvkjhJjme15qWmbyJbtAx4ot4uZA==,
-      }
 
   node-releases@2.0.21:
     resolution:
@@ -8250,8 +8235,6 @@ snapshots:
       object-assign: 4.1.1
       thenify-all: 1.6.0
 
-  nan@2.23.0: {}
-
   nanoid@3.3.11: {}
 
   natural-compare@1.4.0: {}
@@ -8304,10 +8287,6 @@ snapshots:
     transitivePeerDependencies:
       - bluebird
       - supports-color
-
-  node-pty@1.0.0:
-    dependencies:
-      nan: 2.23.0
 
   node-releases@2.0.21: {}
 
