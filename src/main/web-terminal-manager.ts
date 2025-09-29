@@ -11,8 +11,6 @@ import { Logger } from './logger';
 import { TerminalOptions } from '../schemas';
 import { BrowserWindow } from 'electron';
 import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
 
 interface TerminalSession {
   id: string;

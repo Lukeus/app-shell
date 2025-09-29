@@ -9,6 +9,12 @@ import {
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
 
+// Theme change event data interface
+interface ThemeChangeData {
+  themeId: string;
+  theme: Theme;
+}
+
 // Define the API interface
 interface TerminalInfo {
   id: string;
@@ -41,7 +47,7 @@ interface ElectronAPI {
   onTerminalData: (terminalId: string, callback: (data: string) => void) => void;
 
   // Theme
-  onThemeChange: (callback: (themeData: any) => void) => void;
+  onThemeChange: (callback: (themeData: ThemeChangeData) => void) => void;
 
   // Extensions
   getExtensions: () => Promise<Extension[]>;
@@ -147,7 +153,7 @@ const electronAPI: ElectronAPI = {
   },
 
   // Theme change listener
-  onThemeChange: (callback: (themeData: any) => void) => {
+  onThemeChange: (callback: (themeData: ThemeChangeData) => void) => {
     ipcRenderer.on('extension:themeChanged', (event, data) => {
       callback(data);
     });
