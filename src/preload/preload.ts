@@ -40,6 +40,9 @@ interface ElectronAPI {
   killTerminal: (terminalId: string) => void;
   onTerminalData: (terminalId: string, callback: (data: string) => void) => void;
 
+  // Theme
+  onThemeChange: (callback: (themeData: any) => void) => void;
+
   // Extensions
   getExtensions: () => Promise<Extension[]>;
   enableExtension: (extensionId: string) => Promise<void>;
@@ -139,6 +142,13 @@ const electronAPI: ElectronAPI = {
   },
   onTerminalData: (terminalId: string, callback: (data: string) => void) => {
     ipcRenderer.on(`terminal:data:${terminalId}`, (event, data) => {
+      callback(data);
+    });
+  },
+
+  // Theme change listener
+  onThemeChange: (callback: (themeData: any) => void) => {
+    ipcRenderer.on('extension:themeChanged', (event, data) => {
       callback(data);
     });
   },

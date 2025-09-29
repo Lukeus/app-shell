@@ -73,6 +73,12 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
+      - name: Fetch all tags
+        run: |
+          git fetch --tags --force
+          echo "📋 Current tags:"
+          git tag -l | head -10
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -92,12 +98,34 @@ jobs:
             PRERELEASE="${{ needs.check-trigger.outputs.input_prerelease }}"
             echo "📋 Manual release version: $VERSION"
           else
-            # Auto-increment patch version from current package.json
+            # Auto-increment patch version based on latest git tag
             echo "🔍 Determining next auto-release version..."
             
-            # Get current version from package.json
-            CURRENT_VERSION=$(node -p "require('./package.json').version")
-            echo "Current version: $CURRENT_VERSION"
+            # Get the latest tag (if any)
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            echo "Latest tag: $LATEST_TAG"
+            
+            # Remove 'v' prefix for version parsing
+            LATEST_VERSION=${LATEST_TAG#v}
+            
+            # Get current version from package.json as fallback
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            echo "Package.json version: $PACKAGE_VERSION"
+            
+            # Use the higher version as base
+            if [[ "$LATEST_VERSION" != "0.0.0" ]]; then
+              # Compare versions and use the higher one
+              if [[ $(printf '%s\n' "$LATEST_VERSION" "$PACKAGE_VERSION" | sort -V | tail -n1) == "$LATEST_VERSION" ]]; then
+                CURRENT_VERSION="$LATEST_VERSION"
+                echo "Using latest tag version: $CURRENT_VERSION"
+              else
+                CURRENT_VERSION="$PACKAGE_VERSION"  
+                echo "Using package.json version: $CURRENT_VERSION"
+              fi
+            else
+              CURRENT_VERSION="$PACKAGE_VERSION"
+              echo "No tags found, using package.json version: $CURRENT_VERSION"
+            fi
             
             # Auto-increment patch version
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
@@ -111,13 +139,35 @@ jobs:
             echo "Auto-incremented to: $VERSION"
           fi
 
+          # Handle tag conflicts by finding next available version
+          ORIGINAL_VERSION="$VERSION"
           TAG="v$VERSION"
+          ATTEMPT=0
+          MAX_ATTEMPTS=10
 
-          # Check if tag already exists
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "❌ Error: Tag $TAG already exists!"
-            echo "Please use a different version or delete the existing tag first."
-            exit 1
+          while git rev-parse "$TAG" >/dev/null 2>&1; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+              echo "❌ Error: Could not find available version after $MAX_ATTEMPTS attempts"
+              echo "Latest attempted: $TAG"
+              echo "Please manually resolve version conflicts"
+              exit 1
+            fi
+            
+            echo "⚠️  Tag $TAG already exists, incrementing..."
+            
+            # Parse current version and increment patch
+            IFS='.' read -ra VERSION_PARTS <<< "$VERSION"
+            MAJOR=${VERSION_PARTS[0]}
+            MINOR=${VERSION_PARTS[1]}
+            PATCH=${VERSION_PARTS[2]}
+            NEW_PATCH=$((PATCH + 1))
+            VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+            TAG="v$VERSION"
+          done
+
+          if [ "$VERSION" != "$ORIGINAL_VERSION" ]; then
+            echo "🔄 Version auto-adjusted from $ORIGINAL_VERSION to $VERSION to avoid conflicts"
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT

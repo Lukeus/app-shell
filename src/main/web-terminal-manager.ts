@@ -19,7 +19,6 @@ interface TerminalSession {
   process: ChildProcess;
   cwd: string;
   shell: string;
-  currentLine?: string;
 }
 
 export class WebTerminalManager {
@@ -50,12 +49,19 @@ export class WebTerminalManager {
       // Create shell process with proper environment
       const env = {
         ...process.env,
-        TERM: 'xterm-256color',
+        // Set terminal type for better compatibility
+        TERM: process.platform === 'win32' ? 'xterm' : 'xterm-256color',
         COLUMNS: '80',
         LINES: '24',
         HOME: os.homedir(),
+        USERPROFILE: os.homedir(), // Windows equivalent of HOME
         SHELL: shell,
-        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+        // Use appropriate PATH for the platform
+        PATH:
+          process.env.PATH ||
+          (process.platform === 'win32'
+            ? 'C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0'
+            : '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'),
         ...options?.env,
       };
 
@@ -65,12 +71,25 @@ export class WebTerminalManager {
         LINES: env.LINES,
       });
 
-      const childProcess = spawn(shell, ['-i', '-l'], {
-        // -i for interactive, -l for login shell
+      // Configure shell arguments based on platform
+      let shellArgs: string[] = [];
+      if (shell.includes('powershell')) {
+        // PowerShell arguments for interactive session
+        shellArgs = ['-NoExit', '-Command', '& {Set-Location $env:USERPROFILE; Clear-Host}'];
+      } else if (shell.includes('cmd')) {
+        // CMD arguments
+        shellArgs = ['/k'];
+      } else {
+        // Unix shells
+        shellArgs = ['-i', '-l'];
+      }
+
+      const childProcess = spawn(shell, shellArgs, {
         cwd,
         stdio: ['pipe', 'pipe', 'pipe'],
         env,
         detached: false,
+        shell: false, // Don't use shell wrapper to avoid double-shell issues
       });
 
       const session: TerminalSession = {
@@ -95,24 +114,17 @@ export class WebTerminalManager {
       childProcess.stdout?.on('data', data => {
         const dataStr = data.toString();
         this.logger.debug(`Terminal ${terminalId} stdout:`, dataStr.slice(0, 100));
-        // Send output directly to terminal, then add prompt
-        this.sendToRenderer(terminalId, dataStr);
-        // Add a prompt after command output if it doesn't end with one
-        if (!dataStr.endsWith('$ ') && !dataStr.endsWith('% ') && !dataStr.endsWith('> ')) {
-          setTimeout(() => {
-            this.sendToRenderer(terminalId, '$ ');
-          }, 10);
-        }
+        // Normalize line endings to prevent double spacing
+        const normalizedData = this.normalizeLineEndings(dataStr);
+        this.sendToRenderer(terminalId, normalizedData);
       });
 
       childProcess.stderr?.on('data', data => {
         const dataStr = data.toString();
         this.logger.debug(`Terminal ${terminalId} stderr:`, dataStr.slice(0, 100));
-        this.sendToRenderer(terminalId, dataStr);
-        // Add a prompt after error output
-        setTimeout(() => {
-          this.sendToRenderer(terminalId, '$ ');
-        }, 10);
+        // Normalize line endings to prevent double spacing
+        const normalizedData = this.normalizeLineEndings(dataStr);
+        this.sendToRenderer(terminalId, normalizedData);
       });
 
       // Handle process exit
@@ -122,14 +134,8 @@ export class WebTerminalManager {
         this.sendToRenderer(terminalId, `\r\n[Process exited with code: ${code}]\r\n`);
       });
 
-      // Send initial prompt without extra messages to avoid clutter
-      this.logger.info(`Sending welcome message for terminal ${terminalId}`);
-
-      // Send a clean prompt after a short delay
-      setTimeout(() => {
-        this.logger.info(`Sending initial prompt for terminal ${terminalId}`);
-        this.sendToRenderer(terminalId, '$ ');
-      }, 100);
+      // Let the shell provide its own prompt - no artificial prompt needed
+      this.logger.info(`Terminal ${terminalId} ready - shell will provide prompt`);
 
       this.logger.info(`Web terminal created: ${terminalId} (PID: ${childProcess.pid})`);
 
@@ -154,38 +160,17 @@ export class WebTerminalManager {
     }
 
     try {
-      // Store input for command line editing
-      if (!session.currentLine) {
-        session.currentLine = '';
-      }
-
-      if (data === '\r') {
-        // Execute command when Enter is pressed
-        this.logger.debug(`Executing command: ${session.currentLine}`);
-        this.sendToRenderer(terminalId, '\r\n');
-
-        if (session.currentLine.trim()) {
-          // Execute command directly for better reliability
-          this.executeCommand(terminalId, session.currentLine.trim(), session.cwd);
-        } else {
-          // Empty line, just show prompt
-          this.sendToRenderer(terminalId, '$ ');
-        }
-
-        session.currentLine = '';
-      } else if (data === '\u007f' || data === '\b') {
-        // Handle backspace
-        if (session.currentLine && session.currentLine.length > 0) {
-          session.currentLine = session.currentLine.slice(0, -1);
-          this.sendToRenderer(terminalId, '\b \b');
-        }
-      } else if (data.charCodeAt(0) >= 32 && data.charCodeAt(0) <= 126) {
-        // Handle printable characters
-        session.currentLine += data;
-        this.sendToRenderer(terminalId, data);
+      // Send data directly to the shell process for better compatibility
+      // This allows the shell to handle command parsing, history, tab completion, etc.
+      if (session.process.stdin && !session.process.stdin.destroyed) {
+        session.process.stdin.write(data);
+      } else {
+        this.logger.warn(`Terminal ${terminalId} stdin not available`);
+        this.sendToRenderer(terminalId, '\r\n[Terminal process not available]\r\n');
       }
     } catch (error) {
       this.logger.error(`Failed to write to terminal ${terminalId}:`, error);
+      this.sendToRenderer(terminalId, `\r\n[Error: ${error}]\r\n`);
     }
   }
 
@@ -217,81 +202,20 @@ export class WebTerminalManager {
     }
   }
 
+  // Command execution is now handled by the shell process directly
+  // This method is kept for any future custom command handling needs
   private executeCommand(terminalId: string, command: string, cwd: string): void {
-    this.logger.debug(`Executing command directly: ${command}`);
-
-    // Handle built-in commands first
-    if (command === 'clear') {
-      // Clear terminal - we'll let the renderer handle this
-      this.sendToRenderer(terminalId, '\x1B[2J\x1B[H');
-      this.sendToRenderer(terminalId, '$ ');
-      return;
-    }
-
-    if (command.startsWith('cd ')) {
-      const newPath = command.substring(3).trim() || os.homedir();
-      const session = this.sessions.get(terminalId);
-      if (session) {
-        try {
-          const resolvedPath = path.resolve(session.cwd, newPath);
-          if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
-            session.cwd = resolvedPath;
-            this.sendToRenderer(terminalId, '$ ');
-          } else {
-            this.sendToRenderer(terminalId, `cd: ${newPath}: No such file or directory\r\n$ `);
-          }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_error) {
-          this.sendToRenderer(terminalId, `cd: ${newPath}: Permission denied\r\n$ `);
-        }
-      }
-      return;
-    }
-
-    // Execute other commands using spawn
-    const args = command.split(' ');
-    const cmd = args.shift()!;
-
-    const childProcess = spawn(cmd, args, {
-      cwd,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        TERM: 'xterm-256color',
-        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-      },
-    });
-
-    let output = '';
-
-    childProcess.stdout?.on('data', data => {
-      output += data.toString();
-    });
-
-    childProcess.stderr?.on('data', data => {
-      output += data.toString();
-    });
-
-    childProcess.on('close', code => {
-      if (output) {
-        this.sendToRenderer(terminalId, output);
-      }
-      if (code !== 0 && !output) {
-        this.sendToRenderer(terminalId, `${cmd}: command not found\r\n`);
-      }
-      this.sendToRenderer(terminalId, '$ ');
-    });
-
-    childProcess.on('error', _error => {
-      this.sendToRenderer(terminalId, `${cmd}: command not found\r\n$ `);
-    });
+    // This method is no longer used as commands are passed directly to the shell
+    // Keeping for potential future custom command handling
+    this.logger.debug(`Command would be executed: ${command} in ${cwd} for terminal ${terminalId}`);
   }
 
   private getDefaultShell(): string {
     const platform = process.platform;
     switch (platform) {
       case 'win32':
-        return process.env.COMSPEC || 'cmd.exe';
+        // Use PowerShell for better Windows experience
+        return 'powershell.exe';
       case 'darwin':
         // Use bash instead of zsh for better compatibility with pipes
         return '/bin/bash';
@@ -300,6 +224,15 @@ export class WebTerminalManager {
       default:
         return '/bin/sh';
     }
+  }
+
+  private normalizeLineEndings(data: string): string {
+    // Fix double spacing issues by normalizing line endings
+    // PowerShell sometimes outputs \r\n which can cause double spacing in xterm.js
+    return data
+      .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+      .replace(/\r/g, '\n') // Convert any remaining carriage returns
+      .replace(/\n\n+/g, '\n'); // Remove multiple consecutive newlines (but keep single ones)
   }
 
   private sendToRenderer(terminalId: string, data: string): void {
