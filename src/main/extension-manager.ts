@@ -848,6 +848,17 @@ export class ExtensionManager {
     if (theme) {
       await this.settingsManager.set('theme', themeId);
       this.logger.info(`Applied theme: ${theme.name}`);
+
+      // Send theme data to all renderer processes
+      this.emitExtensionEvent('themeChanged', {
+        themeId,
+        theme: {
+          id: theme.id,
+          name: theme.name,
+          type: theme.type,
+          colors: theme.colors,
+        },
+      });
     } else {
       this.logger.warn(`Theme not found: ${themeId}`);
       throw new Error(`Theme not found: ${themeId}`);
