@@ -261,13 +261,16 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
           {iconInfo.icon}
           {badge && (
             <span
-              className="absolute -top-1 -right-1 text-[9px] rounded px-[2px] py-[0px] font-semibold"
+              className="absolute -top-1 -right-1 text-[9px] rounded-sm px-[3px] py-[1px] font-bold shadow-sm"
               style={{
-                background: '#1e1e1e',
-                border: '1px solid #444',
-                color: decoration?.color || '#ccc',
-                lineHeight: '10px',
+                background: decoration?.color || '#666',
+                border: '1px solid rgba(0, 0, 0, 0.3)',
+                color: '#fff',
+                lineHeight: '9px',
+                minWidth: '12px',
+                textAlign: 'center',
               }}
+              title={decoration?.tooltip}
             >
               {badge}
             </span>
@@ -321,6 +324,7 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
               isSelected={false} // Child selection would be managed by parent
               isRenaming={false}
               showHiddenFiles={showHiddenFiles}
+              decorations={decorations}
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
               onContextMenu={onContextMenu}

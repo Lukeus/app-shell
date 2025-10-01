@@ -97,7 +97,7 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.js', '*.js'],
+    files: ['scripts/**/*.js', '*.js', 'examples/**/package-extension.js'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'commonjs',
