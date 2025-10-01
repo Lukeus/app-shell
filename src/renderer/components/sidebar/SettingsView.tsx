@@ -1,12 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
+interface Theme {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export const SettingsView: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const [fontSize, setFontSize] = useState(14);
+  const [availableThemes, setAvailableThemes] = useState<Theme[]>([]);
 
-  // Theme is now loaded by ThemeManager in App.tsx
-  // No need to duplicate the loading logic here
+  // Load available themes on component mount
+  useEffect(() => {
+    const loadThemes = async () => {
+      try {
+        const themes = await window.electronAPI?.getThemes();
+        if (themes && Array.isArray(themes)) {
+          setAvailableThemes(themes);
+        }
+      } catch (error) {
+        console.error('Failed to load themes:', error);
+        // Fallback to built-in themes
+        setAvailableThemes([
+          { id: 'builtin.dark', name: 'Dark', type: 'dark' },
+          { id: 'builtin.light', name: 'Light', type: 'light' },
+        ]);
+      }
+    };
+
+    loadThemes();
+  }, []);
 
   const handleThemeChange = async (theme: string) => {
     try {
@@ -39,8 +64,11 @@ export const SettingsView: React.FC = () => {
             value={state.currentTheme}
             onChange={e => handleThemeChange(e.target.value)}
           >
-            <option value="builtin.dark">Dark</option>
-            <option value="builtin.light">Light</option>
+            {availableThemes.map(theme => (
+              <option key={theme.id} value={theme.id}>
+                {theme.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>

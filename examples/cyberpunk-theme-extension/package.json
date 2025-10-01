@@ -1,0 +1,113 @@
+{
+  "name": "cyberpunk-theme",
+  "displayName": "Cyberpunk Theme Collection",
+  "version": "1.0.0",
+  "description": "A futuristic cyberpunk theme collection with neon colors, glitch effects, and high-tech aesthetics",
+  "main": "src/extension.js",
+  "author": {
+    "name": "Theme Studio",
+    "email": "themes@example.com",
+    "url": "https://themestudio.dev"
+  },
+  "publisher": "theme-studio",
+  "license": "MIT",
+  "keywords": [
+    "theme",
+    "cyberpunk",
+    "neon",
+    "dark",
+    "futuristic",
+    "ui",
+    "colors"
+  ],
+  "categories": [
+    "Themes"
+  ],
+  "engines": {
+    "app-shell": "^1.0.0"
+  },
+  "activationEvents": [
+    "onStartup"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "id": "cyberpunk-neon",
+        "label": "Cyberpunk Neon",
+        "uiTheme": "vs-dark",
+        "path": "./themes/cyberpunk-neon.json"
+      },
+      {
+        "id": "cyberpunk-matrix",
+        "label": "Cyberpunk Matrix",
+        "uiTheme": "vs-dark",
+        "path": "./themes/cyberpunk-matrix.json"
+      },
+      {
+        "id": "cyberpunk-blade-runner",
+        "label": "Cyberpunk Blade Runner",
+        "uiTheme": "vs-dark",
+        "path": "./themes/cyberpunk-blade-runner.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "cyberpunk.toggleGlitchEffect",
+        "title": "Toggle Glitch Effect",
+        "category": "Cyberpunk Theme"
+      },
+      {
+        "command": "cyberpunk.cycleThemes",
+        "title": "Cycle Cyberpunk Themes",
+        "category": "Cyberpunk Theme"
+      },
+      {
+        "command": "cyberpunk.showAbout",
+        "title": "About Cyberpunk Theme",
+        "category": "Cyberpunk Theme"
+      }
+    ],
+    "settings": [
+      {
+        "key": "cyberpunk.glitchEffect",
+        "type": "boolean",
+        "default": false,
+        "title": "Enable Glitch Effect",
+        "description": "Enable subtle glitch animation effects"
+      },
+      {
+        "key": "cyberpunk.neonIntensity",
+        "type": "number",
+        "default": 0.8,
+        "title": "Neon Glow Intensity",
+        "description": "Control the intensity of neon glow effects (0.0 - 1.0)"
+      },
+      {
+        "key": "cyberpunk.animationSpeed",
+        "type": "string",
+        "default": "normal",
+        "title": "Animation Speed",
+        "description": "Control animation speed for theme effects"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cyberpunk.cycleThemes",
+        "key": "ctrl+shift+alt+c",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "echo 'No build step required for theme extension'",
+    "package": "zip -r cyberpunk-theme-extension.zip . -x 'node_modules/*' '.git/*' '*.zip'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/cyberpunk-theme-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/example/cyberpunk-theme-extension/issues"
+  },
+  "homepage": "https://github.com/example/cyberpunk-theme-extension#readme"
+}
