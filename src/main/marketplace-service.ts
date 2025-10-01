@@ -34,14 +34,8 @@ export class MarketplaceService implements IMarketplaceService {
     this.marketplacePath = path.join(userDataPath, 'marketplace');
     this.cachePath = path.join(this.marketplacePath, 'cache');
 
-    // Default registry - for demo purposes, we'll use a mock registry
-    this.registries = [
-      {
-        name: 'Official Registry',
-        url: 'https://marketplace.app-shell.dev/api',
-        enabled: true,
-      },
-    ];
+    // Initialize with empty registries - users can add their own
+    this.registries = [];
 
     this.ensureDirectories();
   }
@@ -49,6 +43,9 @@ export class MarketplaceService implements IMarketplaceService {
   async init(): Promise<void> {
     try {
       this.logger.info('Initializing Marketplace Service...');
+
+      // Clear any existing mock data
+      await this.clearMockData();
 
       // Load custom registries from settings
       const registriesValue = await this.settingsManager.get('marketplace.registries');
@@ -83,8 +80,8 @@ export class MarketplaceService implements IMarketplaceService {
       try {
         this.logger.debug(`Syncing registry: ${registry.name}`);
         // In a real implementation, this would fetch from the registry API
-        // For now, we'll create mock data
-        await this.createMockPluginData();
+        // For now, registries are empty until configured by users
+        this.logger.debug(`Registry ${registry.name} sync skipped - no API endpoint configured`);
         registry.lastSync = new Date().toISOString();
       } catch (error) {
         this.logger.error(`Failed to sync registry ${registry.name}`, error);
@@ -93,132 +90,29 @@ export class MarketplaceService implements IMarketplaceService {
   }
 
   private async createMockPluginData(): Promise<void> {
-    // Create some mock marketplace plugins for demonstration
-    const mockPlugins: MarketplacePlugin[] = [
-      {
-        id: 'theme-dark-plus',
-        name: 'theme-dark-plus',
-        displayName: 'Dark+ Theme',
-        version: '1.0.0',
-        description: 'Enhanced dark theme with better syntax highlighting',
-        longDescription:
-          'A carefully crafted dark theme that provides excellent readability and reduces eye strain during long coding sessions.',
-        author: {
-          name: 'Theme Studio',
-          email: 'themes@example.com',
-          url: 'https://themestudio.dev',
-        },
-        publisher: 'theme-studio',
-        category: 'themes',
-        tags: ['theme', 'dark', 'coding', 'syntax-highlighting'],
-        icon: 'https://example.com/icons/dark-plus.png',
-        license: 'MIT',
-        engines: {
-          'app-shell': '^1.0.0',
-        },
-        downloadCount: 15420,
-        rating: {
-          average: 4.8,
-          count: 342,
-        },
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-03-20T14:30:00Z',
-        versions: [
-          {
-            version: '1.0.0',
-            downloadUrl: 'https://example.com/plugins/theme-dark-plus-1.0.0.zip',
-            size: 52480,
-            publishedAt: '2024-03-20T14:30:00Z',
-            engines: {
-              'app-shell': '^1.0.0',
-            },
-          },
-        ],
-        isInstalled: false,
-      },
-      {
-        id: 'terminal-enhancer',
-        name: 'terminal-enhancer',
-        displayName: 'Terminal Enhancer',
-        version: '2.1.0',
-        description: 'Enhanced terminal with tabs, split panes, and custom themes',
-        longDescription:
-          'Supercharge your terminal experience with multiple tabs, split panes, custom themes, and advanced features like session persistence.',
-        author: {
-          name: 'DevTools Inc',
-          email: 'contact@devtools.com',
-        },
-        publisher: 'devtools-inc',
-        category: 'productivity',
-        tags: ['terminal', 'tabs', 'productivity', 'enhancement'],
-        license: 'Apache-2.0',
-        engines: {
-          'app-shell': '^1.0.0',
-        },
-        downloadCount: 8932,
-        rating: {
-          average: 4.6,
-          count: 198,
-        },
-        createdAt: '2024-02-01T09:00:00Z',
-        updatedAt: '2024-03-18T11:45:00Z',
-        versions: [
-          {
-            version: '2.1.0',
-            downloadUrl: 'https://example.com/plugins/terminal-enhancer-2.1.0.zip',
-            size: 128000,
-            publishedAt: '2024-03-18T11:45:00Z',
-            engines: {
-              'app-shell': '^1.0.0',
-            },
-          },
-        ],
-        isInstalled: false,
-      },
-      {
-        id: 'git-integration',
-        name: 'git-integration',
-        displayName: 'Git Integration',
-        version: '3.0.2',
-        description: 'Full Git integration with visual diff, branch management, and commit history',
-        longDescription:
-          'Complete Git integration that brings version control directly into your workspace with visual diffs, branch management, commit history, and merge conflict resolution.',
-        author: {
-          name: 'VCS Solutions',
-          email: 'git@vcs-solutions.com',
-        },
-        publisher: 'vcs-solutions',
-        category: 'version-control',
-        tags: ['git', 'version-control', 'diff', 'merge', 'branches'],
-        license: 'MIT',
-        engines: {
-          'app-shell': '^1.0.0',
-        },
-        downloadCount: 23741,
-        rating: {
-          average: 4.9,
-          count: 512,
-        },
-        createdAt: '2023-11-10T08:00:00Z',
-        updatedAt: '2024-03-22T16:20:00Z',
-        versions: [
-          {
-            version: '3.0.2',
-            downloadUrl: 'https://example.com/plugins/git-integration-3.0.2.zip',
-            size: 256000,
-            publishedAt: '2024-03-22T16:20:00Z',
-            engines: {
-              'app-shell': '^1.0.0',
-            },
-          },
-        ],
-        isInstalled: false,
-      },
-    ];
-
-    // Save mock plugins to cache
+    // No longer creating mock data - marketplace is empty until real registries are configured
     const cachePath = path.join(this.cachePath, 'plugins.json');
-    fs.writeFileSync(cachePath, JSON.stringify(mockPlugins, null, 2), 'utf8');
+    try {
+      // Try to read the file first to avoid overwriting existing data
+      fs.readFileSync(cachePath, 'utf8');
+    } catch (error) {
+      // If file doesn't exist, create it atomically
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        fs.writeFileSync(cachePath, JSON.stringify([], null, 2), 'utf8');
+      }
+      // If file exists but has other issues, let it be handled elsewhere
+    }
+  }
+
+  private async clearMockData(): Promise<void> {
+    try {
+      const cachePath = path.join(this.cachePath, 'plugins.json');
+      // Reset plugins cache to empty array to remove any existing mock data
+      fs.writeFileSync(cachePath, JSON.stringify([], null, 2), 'utf8');
+      this.logger.info('Cleared any existing mock marketplace data');
+    } catch (error) {
+      this.logger.warn('Failed to clear mock data, continuing...', error);
+    }
   }
 
   async searchPlugins(query: MarketplaceSearchQuery): Promise<MarketplaceSearchResult> {
@@ -483,8 +377,10 @@ export class MarketplaceService implements IMarketplaceService {
     try {
       const installedExtensions = this.extensionManager.getAllExtensions();
       const plugins = await this.getCachedPlugins();
+      const result: MarketplacePlugin[] = [];
 
-      return plugins
+      // Add marketplace plugins that are installed
+      const marketplaceInstalled = plugins
         .filter(plugin => installedExtensions.some(ext => ext.id === plugin.id))
         .map(plugin => {
           const extension = installedExtensions.find(ext => ext.id === plugin.id)!;
@@ -495,6 +391,51 @@ export class MarketplaceService implements IMarketplaceService {
             hasUpdate: this.isVersionNewer(plugin.version, extension.version),
           };
         });
+
+      result.push(...marketplaceInstalled);
+
+      // Add locally installed extensions that aren't from marketplace
+      const localExtensions = installedExtensions
+        .filter(ext => !plugins.some(plugin => plugin.id === ext.id))
+        .map(ext => {
+          // Convert Extension to MarketplacePlugin format
+          const plugin: MarketplacePlugin = {
+            id: ext.id,
+            name: ext.id,
+            displayName: ext.name,
+            version: ext.version,
+            description: ext.description,
+            author:
+              typeof ext.author === 'string'
+                ? { name: ext.author }
+                : { name: ext.author || 'Unknown' },
+            publisher: 'local',
+            category: 'Extensions',
+            tags: ext.keywords || [],
+            license: ext.license || 'Unknown',
+            engines: { 'app-shell': ext.engines?.['app-shell'] || '^1.0.0' },
+            downloadCount: 0,
+            rating: { average: 0, count: 0 },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            versions: [
+              {
+                version: ext.version,
+                downloadUrl: '',
+                size: 0,
+                publishedAt: new Date().toISOString(),
+                engines: { 'app-shell': ext.engines?.['app-shell'] || '^1.0.0' },
+              },
+            ],
+            isInstalled: true,
+            installedVersion: ext.version,
+          };
+          return plugin;
+        });
+
+      result.push(...localExtensions);
+
+      return result;
     } catch (error) {
       this.logger.error('Failed to get installed plugins', error);
       throw error;
@@ -508,12 +449,24 @@ export class MarketplaceService implements IMarketplaceService {
   private async getCachedPlugins(): Promise<MarketplacePlugin[]> {
     try {
       const cachePath = path.join(this.cachePath, 'plugins.json');
-      if (!fs.existsSync(cachePath)) {
-        await this.createMockPluginData();
-      }
 
-      const content = fs.readFileSync(cachePath, 'utf8');
-      return JSON.parse(content);
+      // Use a more atomic approach to avoid race conditions
+      try {
+        const content = fs.readFileSync(cachePath, 'utf8');
+        return JSON.parse(content);
+      } catch (error) {
+        // If file doesn't exist or can't be read, create it atomically
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          // File doesn't exist, create it with empty array
+          const emptyData = JSON.stringify([], null, 2);
+          fs.writeFileSync(cachePath, emptyData, 'utf8');
+          return [];
+        } else {
+          // File exists but couldn't be parsed, log error and return empty array
+          this.logger.warn('Failed to parse cached plugins file, returning empty array', error);
+          return [];
+        }
+      }
     } catch (error) {
       this.logger.error('Failed to load cached plugins', error);
       return [];

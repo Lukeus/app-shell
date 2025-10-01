@@ -113,6 +113,19 @@ interface ElectronAPI {
   ) => Promise<{ status: string; progress: number; error?: string }>;
 }
 
+// Helper wrapper to automatically throw on structured { error } responses
+async function invokeSafe<T = unknown>(channel: string, ...args: unknown[]): Promise<T> {
+  const result = await ipcRenderer.invoke(channel, ...args);
+  if (result && typeof result === 'object' && 'error' in result) {
+    const err = (result as { error: { message?: string; code?: string; details?: unknown } }).error;
+    const error = new Error(err.message || 'IPC Error');
+    (error as Error & { code?: string; details?: unknown }).code = err.code;
+    (error as Error & { code?: string; details?: unknown }).details = err.details;
+    throw error;
+  }
+  return result as T;
+}
+
 // Create the API object
 const electronAPI: ElectronAPI = {
   // Window controls
@@ -131,12 +144,12 @@ const electronAPI: ElectronAPI = {
   },
 
   // Settings
-  getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
-  setSetting: (key: string, value: SettingsValue) => ipcRenderer.invoke('settings:set', key, value),
-  getAllSettings: () => ipcRenderer.invoke('settings:getAll'),
+  getSetting: (key: string) => invokeSafe('settings:get', { key }),
+  setSetting: (key: string, value: SettingsValue) => invokeSafe('settings:set', { key, value }),
+  getAllSettings: () => invokeSafe('settings:getAll', {}),
 
   // Terminal
-  createTerminal: (options?: TerminalOptions) => ipcRenderer.invoke('terminal:create', options),
+  createTerminal: (options?: TerminalOptions) => invokeSafe('terminal:create', options || {}),
   writeToTerminal: (terminalId: string, data: string) => {
     ipcRenderer.invoke('terminal:write', terminalId, data);
   },
@@ -160,22 +173,24 @@ const electronAPI: ElectronAPI = {
   },
 
   // Extensions
-  getExtensions: () => ipcRenderer.invoke('extensions:getAll'),
-  enableExtension: (extensionId: string) => ipcRenderer.invoke('extensions:enable', extensionId),
-  disableExtension: (extensionId: string) => ipcRenderer.invoke('extensions:disable', extensionId),
+  getExtensions: () => ipcRenderer.invoke('extensions:getAll', {}),
+  enableExtension: (extensionId: string) =>
+    ipcRenderer.invoke('extensions:enable', { extensionId }),
+  disableExtension: (extensionId: string) =>
+    ipcRenderer.invoke('extensions:disable', { extensionId }),
   installExtension: (extensionPath: string) =>
-    ipcRenderer.invoke('extensions:install', extensionPath),
+    ipcRenderer.invoke('extensions:install', { extensionPath }),
   uninstallExtension: (extensionId: string) =>
-    ipcRenderer.invoke('extensions:uninstall', extensionId),
+    ipcRenderer.invoke('extensions:uninstall', { extensionId }),
 
   // Themes
-  getThemes: () => ipcRenderer.invoke('theme:getAll'),
-  applyTheme: (themeId: string) => ipcRenderer.invoke('theme:apply', themeId),
+  getThemes: () => ipcRenderer.invoke('theme:getAll', {}),
+  applyTheme: (themeId: string) => ipcRenderer.invoke('theme:apply', { themeId }),
 
   // Commands
   executeCommand: (commandId: string, ...args: unknown[]) =>
-    ipcRenderer.invoke('command:execute', commandId, ...args),
-  getAllCommands: () => ipcRenderer.invoke('command:getAllCommands'),
+    ipcRenderer.invoke('command:execute', { commandId, args }),
+  getAllCommands: () => ipcRenderer.invoke('command:getAllCommands', {}),
 
   // Command palette toggle events from main
   onCommandPaletteToggle: (callback: () => void) => {
@@ -192,31 +207,30 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('fs:showSaveDialog', options),
 
   // File system operations
-  readFile: (filePath: string) => ipcRenderer.invoke('filesystem:readFile', filePath),
+  readFile: (filePath: string) => invokeSafe('filesystem:readFile', { path: filePath }),
   readFileText: (filePath: string, encoding?: BufferEncoding) =>
-    ipcRenderer.invoke('filesystem:readFileText', filePath, encoding),
+    invokeSafe('filesystem:readFileText', { path: filePath, encoding }),
   writeFile: (filePath: string, data: Uint8Array) =>
-    ipcRenderer.invoke('filesystem:writeFile', filePath, data),
+    invokeSafe('filesystem:writeFile', { path: filePath, data }),
   writeFileText: (filePath: string, content: string, encoding?: BufferEncoding) =>
-    ipcRenderer.invoke('filesystem:writeFileText', filePath, content, encoding),
-  createDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:createDirectory', dirPath),
-  deleteFile: (filePath: string) => ipcRenderer.invoke('filesystem:deleteFile', filePath),
-  deleteDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:deleteDirectory', dirPath),
-  exists: (filePath: string) => ipcRenderer.invoke('filesystem:exists', filePath),
-  stat: (filePath: string) => ipcRenderer.invoke('filesystem:stat', filePath),
-  readDirectory: (dirPath: string) => ipcRenderer.invoke('filesystem:readDirectory', dirPath),
+    invokeSafe('filesystem:writeFileText', { path: filePath, content, encoding }),
+  createDirectory: (dirPath: string) => invokeSafe('filesystem:createDirectory', { path: dirPath }),
+  deleteFile: (filePath: string) => invokeSafe('filesystem:deleteFile', { path: filePath }),
+  deleteDirectory: (dirPath: string) => invokeSafe('filesystem:deleteDirectory', { path: dirPath }),
+  exists: (filePath: string) => invokeSafe('filesystem:exists', { path: filePath }),
+  stat: (filePath: string) => invokeSafe('filesystem:stat', { path: filePath }),
+  readDirectory: (dirPath: string) => invokeSafe('filesystem:readDirectory', { path: dirPath }),
   getFileTree: (rootPath: string, depth?: number) =>
-    ipcRenderer.invoke('filesystem:getFileTree', rootPath, depth),
+    invokeSafe('filesystem:getFileTree', { rootPath, depth }),
   rename: (oldPath: string, newPath: string) =>
-    ipcRenderer.invoke('filesystem:rename', oldPath, newPath),
+    invokeSafe('filesystem:rename', { oldPath, newPath }),
   copyFile: (sourcePath: string, targetPath: string) =>
-    ipcRenderer.invoke('filesystem:copyFile', sourcePath, targetPath),
-  getHomeDirectory: () => ipcRenderer.invoke('filesystem:getHomeDirectory'),
-  getPathSeparator: () => ipcRenderer.invoke('filesystem:getPathSeparator'),
-  joinPath: (...segments: string[]) => ipcRenderer.invoke('filesystem:joinPath', ...segments),
-  resolvePath: (filePath: string) => ipcRenderer.invoke('filesystem:resolvePath', filePath),
-  relativePath: (from: string, to: string) =>
-    ipcRenderer.invoke('filesystem:relativePath', from, to),
+    invokeSafe('filesystem:copyFile', { sourcePath, targetPath }),
+  getHomeDirectory: () => invokeSafe('filesystem:getHomeDirectory', {}),
+  getPathSeparator: () => invokeSafe('filesystem:getPathSeparator', {}),
+  joinPath: (...segments: string[]) => invokeSafe('filesystem:joinPath', { segments }),
+  resolvePath: (filePath: string) => invokeSafe('filesystem:resolvePath', { path: filePath }),
+  relativePath: (from: string, to: string) => invokeSafe('filesystem:relativePath', { from, to }),
 
   // Platform info
   getPlatformInfo: () => ipcRenderer.invoke('app:getPlatform'),
@@ -227,17 +241,19 @@ const electronAPI: ElectronAPI = {
 
   // Marketplace
   searchMarketplacePlugins: (query: unknown) => ipcRenderer.invoke('marketplace:search', query),
-  getMarketplacePlugin: (pluginId: string) => ipcRenderer.invoke('marketplace:getPlugin', pluginId),
-  getMarketplaceCategories: () => ipcRenderer.invoke('marketplace:getCategories'),
+  getMarketplacePlugin: (pluginId: string) =>
+    ipcRenderer.invoke('marketplace:getPlugin', { pluginId }),
+  getMarketplaceCategories: () => ipcRenderer.invoke('marketplace:getCategories', {}),
   installMarketplacePlugin: (pluginId: string, version?: string) =>
-    ipcRenderer.invoke('marketplace:install', pluginId, version),
-  updateMarketplacePlugin: (pluginId: string) => ipcRenderer.invoke('marketplace:update', pluginId),
+    ipcRenderer.invoke('marketplace:install', { pluginId, version }),
+  updateMarketplacePlugin: (pluginId: string) =>
+    ipcRenderer.invoke('marketplace:update', { pluginId }),
   uninstallMarketplacePlugin: (pluginId: string) =>
-    ipcRenderer.invoke('marketplace:uninstall', pluginId),
-  getInstalledPlugins: () => ipcRenderer.invoke('marketplace:getInstalled'),
-  checkPluginUpdates: () => ipcRenderer.invoke('marketplace:checkUpdates'),
+    ipcRenderer.invoke('marketplace:uninstall', { pluginId }),
+  getInstalledPlugins: () => ipcRenderer.invoke('marketplace:getInstalled', {}),
+  checkPluginUpdates: () => ipcRenderer.invoke('marketplace:checkUpdates', {}),
   getPluginInstallationStatus: (pluginId: string) =>
-    ipcRenderer.invoke('marketplace:getInstallationStatus', pluginId),
+    ipcRenderer.invoke('marketplace:getInstallationStatus', { pluginId }),
 };
 
 // Expose the API to the renderer process

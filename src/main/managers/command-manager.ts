@@ -13,9 +13,11 @@ export class CommandManager {
   private commands: Map<string, CommandRegistration> = new Map();
   private logger: Logger;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, setupIPC = true) {
     this.logger = logger;
-    this.setupIPC();
+    if (setupIPC) {
+      this.setupIPC();
+    }
     this.registerBuiltinCommands();
   }
 

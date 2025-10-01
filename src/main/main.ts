@@ -8,20 +8,29 @@ import { CommandManager } from './managers/command-manager';
 import { MarketplaceService } from './marketplace-service';
 import { FileSystemManager } from './file-system-manager';
 import { Logger } from './logger';
-import { Platform, MarketplaceSearchQuery } from '../types';
-import { SettingsValue, TerminalOptions } from '../schemas';
+import { Platform } from '../types';
+import { PathSecurity } from './ipc/path-security';
+import { registerSettingsIPC } from './ipc/settings-ipc';
+import { registerFilesystemIPC } from './ipc/filesystem-ipc';
+import { registerCommandIPC } from './ipc/command-ipc';
+import { registerTerminalIPC } from './ipc/terminal-ipc';
+import { registerExtensionIPC } from './ipc/extension-ipc';
+import { registerMarketplaceIPC } from './ipc/marketplace-ipc';
+import { registerAppControlIPC } from './ipc/app-control-ipc';
+import { getGlobalCapabilityEnforcer } from './ipc/capability-enforcer';
 
 class AppShell {
   private windowManager: WindowManager;
   private extensionManager: ExtensionManager;
   private settingsManager: SettingsManager;
   private terminalManager: WebTerminalManager; // TerminalManager | MockTerminalManager | WebTerminalManager
-  private ipcManager: IPCManager;
+  private ipcManager!: IPCManager;
   private commandManager: CommandManager;
   private marketplaceService: MarketplaceService;
   private fileSystemManager: FileSystemManager;
   private logger: Logger;
   private platform: Platform;
+  private pathSecurity: PathSecurity;
 
   constructor() {
     this.platform = process.platform as Platform;
@@ -33,10 +42,21 @@ class AppShell {
     this.extensionManager = new ExtensionManager(this.settingsManager);
     // Initialize terminal manager with WebTerminalManager (node-pty will be loaded dynamically in init)
     this.terminalManager = new WebTerminalManager();
-    this.ipcManager = new IPCManager();
-    this.commandManager = new CommandManager(this.logger);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const IPCManagerClass = require('./ipc-manager').IPCManager;
+    this.ipcManager = new IPCManagerClass();
+    this.commandManager = new CommandManager(this.logger, false); // Disable IPC - handled by modular system
     this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
     this.fileSystemManager = new FileSystemManager();
+
+    // Initialize path security with default roots
+    this.pathSecurity = new PathSecurity({
+      workspaceRoots: [process.cwd()],
+      allowedPaths: [],
+      homeDirectory: this.fileSystemManager.getHomeDirectory(),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      tempDirectory: require('os').tmpdir(),
+    });
 
     this.setupAppEventListeners();
     this.setupIPCHandlers();
@@ -54,6 +74,9 @@ class AppShell {
 
       // Create main window
       await this.windowManager.createMainWindow();
+
+      // Grant basic capabilities to the main renderer
+      this.setupRendererCapabilities();
 
       // Set main window reference in terminal manager if it's WebTerminalManager
       if (this.terminalManager instanceof WebTerminalManager) {
@@ -143,7 +166,13 @@ class AppShell {
   }
 
   private setupIPCHandlers(): void {
-    // Window management
+    // Use modular IPC registrars for better organization and security
+    this.registerWindowIPC();
+    this.registerSecureChannels();
+  }
+
+  private registerWindowIPC(): void {
+    // Window management (low-risk, no validation needed)
     this.ipcManager.handle('window:minimize', () => {
       const focusedWindow = BrowserWindow.getFocusedWindow();
       if (focusedWindow) {
@@ -168,261 +197,46 @@ class AppShell {
         focusedWindow.close();
       }
     });
+  }
 
-    // Settings management
-    this.ipcManager.handle('settings:get', async (_event, ...args: unknown[]) => {
-      const key = args[0] as string;
-      return this.settingsManager.get(key);
-    });
+  private registerSecureChannels(): void {
+    // Register all validated IPC channels with security controls
+    registerSettingsIPC(this.ipcManager, this.logger, this.settingsManager);
+    registerFilesystemIPC(this.ipcManager, this.logger, this.fileSystemManager, this.pathSecurity);
+    registerCommandIPC(this.ipcManager, this.logger, this.extensionManager, this.commandManager);
+    registerTerminalIPC(this.ipcManager, this.logger, this.terminalManager);
+    registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
+    registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
+    registerAppControlIPC(this.ipcManager, this.logger, this.platform);
+  }
 
-    this.ipcManager.handle('settings:set', async (_event, ...args: unknown[]) => {
-      const key = args[0] as string;
-      const value = args[1] as SettingsValue;
-      await this.settingsManager.set(key, value);
-    });
+  private setupRendererCapabilities(): void {
+    const enforcer = getGlobalCapabilityEnforcer();
+    const mainWindow = this.windowManager.getMainWindow();
 
-    this.ipcManager.handle('settings:getAll', async _event => {
-      return this.settingsManager.getAll();
-    });
-
-    // Terminal management
-    this.ipcManager.handle('terminal:create', async (_event, ...args: unknown[]) => {
-      const options = args[0] as TerminalOptions | undefined;
-      return this.terminalManager.createTerminal(options);
-    });
-
-    this.ipcManager.handle('terminal:write', async (_event, ...args: unknown[]) => {
-      const terminalId = args[0] as string;
-      const data = args[1] as string;
-      this.terminalManager.writeToTerminal(terminalId, data);
-    });
-
-    this.ipcManager.handle('terminal:resize', async (_event, ...args: unknown[]) => {
-      const terminalId = args[0] as string;
-      const cols = args[1] as number;
-      const rows = args[2] as number;
-      this.terminalManager.resizeTerminal(terminalId, cols, rows);
-    });
-
-    this.ipcManager.handle('terminal:kill', async (_event, ...args: unknown[]) => {
-      const terminalId = args[0] as string;
-      this.terminalManager.killTerminal(terminalId);
-    });
-
-    // Extension management
-    this.ipcManager.handle('extensions:getAll', async _event => {
-      return this.extensionManager.getAllExtensions();
-    });
-
-    this.ipcManager.handle('extensions:enable', async (_event, ...args: unknown[]) => {
-      const extensionId = args[0] as string;
-      await this.extensionManager.enableExtension(extensionId);
-    });
-
-    this.ipcManager.handle('extensions:disable', async (_event, ...args: unknown[]) => {
-      const extensionId = args[0] as string;
-      await this.extensionManager.disableExtension(extensionId);
-    });
-
-    this.ipcManager.handle('extensions:install', async (_event, ...args: unknown[]) => {
-      const extensionPath = args[0] as string;
-      return this.extensionManager.installExtension(extensionPath);
-    });
-
-    this.ipcManager.handle('extensions:uninstall', async (_event, ...args: unknown[]) => {
-      const extensionId = args[0] as string;
-      await this.extensionManager.uninstallExtension(extensionId);
-    });
-
-    // Theme management
-    this.ipcManager.handle('theme:getAll', async _event => {
-      return this.extensionManager.getAllThemes();
-    });
-
-    this.ipcManager.handle('theme:apply', async (_event, ...args: unknown[]) => {
-      const themeId = args[0] as string;
-      await this.extensionManager.applyTheme(themeId);
-    });
-
-    // Command execution is handled by CommandManager directly via IPC
-
-    // File system operations
-    this.ipcManager.handle('fs:showOpenDialog', async (_event, ...args: unknown[]) => {
-      const options = args[0] as Electron.OpenDialogOptions;
-      const result = await dialog.showOpenDialog(options);
-      return result;
-    });
-
-    this.ipcManager.handle('fs:showSaveDialog', async (_event, ...args: unknown[]) => {
-      const options = args[0] as Electron.SaveDialogOptions;
-      const result = await dialog.showSaveDialog(options);
-      return result;
-    });
-
-    // File system manager operations
-    this.ipcManager.handle('filesystem:readFile', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      return this.fileSystemManager.readFile(filePath);
-    });
-
-    this.ipcManager.handle('filesystem:readFileText', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      const encoding = args[1] as BufferEncoding | undefined;
-      return this.fileSystemManager.readFileText(filePath, encoding);
-    });
-
-    this.ipcManager.handle('filesystem:writeFile', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      const data = args[1] as Uint8Array;
-      await this.fileSystemManager.writeFile(filePath, data);
-    });
-
-    this.ipcManager.handle('filesystem:writeFileText', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      const content = args[1] as string;
-      const encoding = args[2] as BufferEncoding | undefined;
-      await this.fileSystemManager.writeFileText(filePath, content, encoding);
-    });
-
-    this.ipcManager.handle('filesystem:createDirectory', async (_event, ...args: unknown[]) => {
-      const dirPath = args[0] as string;
-      await this.fileSystemManager.createDirectory(dirPath);
-    });
-
-    this.ipcManager.handle('filesystem:deleteFile', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      await this.fileSystemManager.deleteFile(filePath);
-    });
-
-    this.ipcManager.handle('filesystem:deleteDirectory', async (_event, ...args: unknown[]) => {
-      const dirPath = args[0] as string;
-      await this.fileSystemManager.deleteDirectory(dirPath);
-    });
-
-    this.ipcManager.handle('filesystem:exists', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      return this.fileSystemManager.exists(filePath);
-    });
-
-    this.ipcManager.handle('filesystem:stat', async (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      return this.fileSystemManager.stat(filePath);
-    });
-
-    this.ipcManager.handle('filesystem:readDirectory', async (_event, ...args: unknown[]) => {
-      const dirPath = args[0] as string;
-      return this.fileSystemManager.readDirectory(dirPath);
-    });
-
-    this.ipcManager.handle('filesystem:getFileTree', async (_event, ...args: unknown[]) => {
-      const rootPath = args[0] as string;
-      const depth = args[1] as number | undefined;
-      return this.fileSystemManager.getFileTree(rootPath, depth);
-    });
-
-    this.ipcManager.handle('filesystem:rename', async (_event, ...args: unknown[]) => {
-      const oldPath = args[0] as string;
-      const newPath = args[1] as string;
-      await this.fileSystemManager.rename(oldPath, newPath);
-    });
-
-    this.ipcManager.handle('filesystem:copyFile', async (_event, ...args: unknown[]) => {
-      const sourcePath = args[0] as string;
-      const targetPath = args[1] as string;
-      await this.fileSystemManager.copyFile(sourcePath, targetPath);
-    });
-
-    this.ipcManager.handle('filesystem:getHomeDirectory', () => {
-      return this.fileSystemManager.getHomeDirectory();
-    });
-
-    this.ipcManager.handle('filesystem:getPathSeparator', () => {
-      return this.fileSystemManager.getPathSeparator();
-    });
-
-    this.ipcManager.handle('filesystem:joinPath', (_event, ...args: unknown[]) => {
-      const segments = args as string[];
-      return this.fileSystemManager.joinPath(...segments);
-    });
-
-    this.ipcManager.handle('filesystem:resolvePath', (_event, ...args: unknown[]) => {
-      const filePath = args[0] as string;
-      return this.fileSystemManager.resolvePath(filePath);
-    });
-
-    this.ipcManager.handle('filesystem:relativePath', (_event, ...args: unknown[]) => {
-      const from = args[0] as string;
-      const to = args[1] as string;
-      return this.fileSystemManager.relativePath(from, to);
-    });
-
-    // Platform information
-    this.ipcManager.handle('app:getPlatform', () => {
-      return {
-        platform: this.platform,
-        arch: process.arch,
-        version: app.getVersion(),
-        name: app.getName(),
-        isPackaged: app.isPackaged,
+    if (mainWindow) {
+      // Create permission context matching what the validator creates
+      // The validator only sets sessionId and origin, others default to 'anonymous' and 'core'
+      const rendererContext = {
+        sessionId: mainWindow.webContents.id.toString(),
+        // Don't set userId or extensionId - they default to 'anonymous' and 'core'
+        origin: 'file://',
+        timestamp: Date.now(),
       };
-    });
 
-    // Application control
-    this.ipcManager.handle('app:quit', () => {
-      app.quit();
-    });
+      // Grant basic capabilities needed for normal operation
+      // Only grant low-risk capabilities by default
+      enforcer.grantDefaultCapabilities(rendererContext, 'low');
 
-    this.ipcManager.handle('app:restart', () => {
-      app.relaunch();
-      app.quit();
-    });
+      // Grant specific medium-risk capabilities that are essential for the main UI
+      enforcer.grantCapability('settings.write', rendererContext);
+      enforcer.grantCapability('terminal.create', rendererContext);
+      enforcer.grantCapability('terminal.control', rendererContext);
+      enforcer.grantCapability('extensions.manage', rendererContext);
+      enforcer.grantCapability('extensions.install', rendererContext);
 
-    // Marketplace management
-    this.ipcManager.handle('marketplace:search', async (_event, ...args: unknown[]) => {
-      const query = args[0] as MarketplaceSearchQuery;
-      return this.marketplaceService.searchPlugins(query);
-    });
-
-    this.ipcManager.handle('marketplace:getPlugin', async (_event, ...args: unknown[]) => {
-      const pluginId = args[0] as string;
-      return this.marketplaceService.getPlugin(pluginId);
-    });
-
-    this.ipcManager.handle('marketplace:getCategories', async _event => {
-      return this.marketplaceService.getCategories();
-    });
-
-    this.ipcManager.handle('marketplace:install', async (_event, ...args: unknown[]) => {
-      const pluginId = args[0] as string;
-      const version = args[1] as string | undefined;
-      await this.marketplaceService.installPlugin(pluginId, version);
-    });
-
-    this.ipcManager.handle('marketplace:update', async (_event, ...args: unknown[]) => {
-      const pluginId = args[0] as string;
-      await this.marketplaceService.updatePlugin(pluginId);
-    });
-
-    this.ipcManager.handle('marketplace:uninstall', async (_event, ...args: unknown[]) => {
-      const pluginId = args[0] as string;
-      await this.marketplaceService.uninstallPlugin(pluginId);
-    });
-
-    this.ipcManager.handle('marketplace:getInstalled', async _event => {
-      return this.marketplaceService.getInstalledPlugins();
-    });
-
-    this.ipcManager.handle('marketplace:checkUpdates', async _event => {
-      return this.marketplaceService.checkForUpdates();
-    });
-
-    this.ipcManager.handle(
-      'marketplace:getInstallationStatus',
-      async (_event, ...args: unknown[]) => {
-        const pluginId = args[0] as string;
-        return this.marketplaceService.getInstallationStatus(pluginId);
-      }
-    );
+      this.logger.info('Granted default capabilities to main renderer');
+    }
   }
 
   private getAccelerator(key: string): string {

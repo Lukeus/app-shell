@@ -503,7 +503,7 @@ export class ExtensionManager {
             // Ensure colors is properly typed
             if (themeData.colors && typeof themeData.colors === 'object') {
               this.themes.set(themeData.id, themeData as Theme);
-              this.logger.debug(`Registered theme: ${themeData.name}`);
+              this.logger.info(`Registered theme: ${themeData.name} (${themeData.id})`);
             } else {
               this.logger.error(`Invalid theme colors format: ${themeContrib.id}`);
             }
@@ -553,7 +553,29 @@ export class ExtensionManager {
         // Clear require cache to allow reloading
         delete require.cache[require.resolve(extensionMainPath)];
 
-        const extensionModule = await import(pathToFileURL(extensionMainPath).href);
+        let extensionModule;
+        try {
+          // Try ES modules first
+          this.logger.debug(`Attempting to load ES module: ${extensionMainPath}`);
+          extensionModule = await import(pathToFileURL(extensionMainPath).href);
+          this.logger.info(`Successfully loaded ES module: ${extensionMainPath}`);
+        } catch (esError) {
+          try {
+            // Fallback to CommonJS
+            this.logger.debug(`ES module failed, trying CommonJS: ${extensionMainPath}`);
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            extensionModule = require(extensionMainPath);
+            this.logger.info(`Successfully loaded CommonJS module: ${extensionMainPath}`);
+          } catch (cjsError) {
+            this.logger.error(`Failed to load extension module: ${extensionMainPath}`, {
+              esError: esError instanceof Error ? esError.message : String(esError),
+              cjsError: cjsError instanceof Error ? cjsError.message : String(cjsError),
+              path: extensionMainPath,
+              exists: fs.existsSync(extensionMainPath),
+            });
+            throw cjsError;
+          }
+        }
         loadedExt.module = extensionModule;
 
         // Initialize extension API context
@@ -744,53 +766,84 @@ export class ExtensionManager {
         throw new Error(`Extension path does not exist: ${extensionPath}`);
       }
 
-      // Read manifest to get extension info
-      const manifestPath = path.join(sourcePath, 'package.json');
-      if (!fs.existsSync(manifestPath)) {
-        throw new Error('Extension manifest (package.json) not found');
+      let workingPath = sourcePath;
+      let tempExtractPath: string | null = null;
+
+      // Handle ZIP files - extract them first
+      if (path.extname(sourcePath).toLowerCase() === '.zip') {
+        this.logger.info('Detected ZIP file, extracting...');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        tempExtractPath = path.join(require('os').tmpdir(), `extension-${Date.now()}`);
+        await this.extractZipFile(sourcePath, tempExtractPath);
+        workingPath = tempExtractPath;
       }
 
-      const manifestContent = fs.readFileSync(manifestPath, 'utf8');
-      const manifest = JSON.parse(manifestContent);
-      this.validateExtensionManifest(manifest);
+      try {
+        // Read manifest to get extension info
+        const manifestPath = path.join(workingPath, 'package.json');
+        if (!fs.existsSync(manifestPath)) {
+          throw new Error('Extension manifest (package.json) not found');
+        }
 
-      const extensionId = manifest.name;
+        const manifestContent = fs.readFileSync(manifestPath, 'utf8');
+        const manifest = JSON.parse(manifestContent);
+        this.validateExtensionManifest(manifest);
 
-      // Check if extension is already installed
-      if (this.extensions.has(extensionId)) {
-        throw new Error(`Extension already installed: ${extensionId}`);
+        const extensionId = manifest.name;
+
+        // Check if extension is already installed
+        if (this.extensions.has(extensionId)) {
+          throw new Error(`Extension already installed: ${extensionId}`);
+        }
+
+        // Create destination path
+        const destPath = path.join(this.extensionsPath, extensionId);
+
+        // Copy extension files
+        await this.copyExtensionFiles(workingPath, destPath);
+
+        // Load the extension
+        await this.loadExtensionFromPath(destPath);
+
+        // Add to installed extensions list
+        const enabledSettings = await this.settingsManager.get('extensions.enabled');
+        const enabledExtensions = Array.isArray(enabledSettings)
+          ? (enabledSettings as string[])
+          : [];
+        if (!enabledExtensions.includes(extensionId)) {
+          enabledExtensions.push(extensionId);
+          await this.settingsManager.set('extensions.enabled', enabledExtensions);
+        }
+
+        const extension = this.extensions.get(extensionId)?.extension;
+        if (!extension) {
+          throw new Error('Failed to load installed extension');
+        }
+
+        // Automatically activate the extension after installation
+        try {
+          await this.activateExtension(extensionId);
+          this.logger.info(`Extension activated automatically: ${extensionId}`);
+        } catch (activationError) {
+          this.logger.warn(
+            `Extension installed but failed to activate: ${extensionId}`,
+            activationError
+          );
+        }
+
+        this.logger.info(`Extension installed successfully: ${extensionId}`);
+        return extension;
+      } finally {
+        // Clean up temporary extraction directory
+        if (tempExtractPath && fs.existsSync(tempExtractPath)) {
+          await this.removeDirectory(tempExtractPath);
+        }
       }
-
-      // Create destination path
-      const destPath = path.join(this.extensionsPath, extensionId);
-
-      // Copy extension files
-      await this.copyExtensionFiles(sourcePath, destPath);
-
-      // Load the extension
-      await this.loadExtensionFromPath(destPath);
-
-      // Add to installed extensions list
-      const enabledSettings = await this.settingsManager.get('extensions.enabled');
-      const enabledExtensions = Array.isArray(enabledSettings) ? (enabledSettings as string[]) : [];
-      if (!enabledExtensions.includes(extensionId)) {
-        enabledExtensions.push(extensionId);
-        await this.settingsManager.set('extensions.enabled', enabledExtensions);
-      }
-
-      const extension = this.extensions.get(extensionId)?.extension;
-      if (!extension) {
-        throw new Error('Failed to load installed extension');
-      }
-
-      this.logger.info(`Extension installed successfully: ${extensionId}`);
-      return extension;
     } catch (error) {
       this.logger.error('Failed to install extension', error);
       throw error;
     }
   }
-
   async uninstallExtension(extensionId: string): Promise<void> {
     this.logger.info(`Uninstalling extension: ${extensionId}`);
 
@@ -840,7 +893,9 @@ export class ExtensionManager {
   }
 
   getAllThemes(): Theme[] {
-    return Array.from(this.themes.values());
+    const themes = Array.from(this.themes.values());
+    this.logger.debug(`Returning ${themes.length} themes: ${themes.map(t => t.name).join(', ')}`);
+    return themes;
   }
 
   async applyTheme(themeId: string): Promise<void> {
@@ -970,6 +1025,73 @@ export class ExtensionManager {
     };
 
     await removeRecursive(dirPath);
+  }
+
+  private async extractZipFile(zipPath: string, extractPath: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
+    const path = require('path');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
+    const { promisify } = require('util');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { spawn } = require('child_process');
+
+    // Create extraction directory
+    if (!fs.existsSync(extractPath)) {
+      fs.mkdirSync(extractPath, { recursive: true });
+    }
+
+    return new Promise((resolve, reject) => {
+      // Use PowerShell on Windows to extract ZIP
+      if (process.platform === 'win32') {
+        const powershellCmd = `Expand-Archive -Path "${zipPath}" -DestinationPath "${extractPath}" -Force`;
+        const ps = spawn('powershell', ['-Command', powershellCmd], {
+          stdio: 'pipe',
+        });
+
+        let errorOutput = '';
+        ps.stderr.on('data', (data: Buffer) => {
+          errorOutput += data.toString();
+        });
+
+        ps.on('close', (code: number) => {
+          if (code === 0) {
+            this.logger.info(`Successfully extracted ZIP to: ${extractPath}`);
+            resolve();
+          } else {
+            reject(new Error(`ZIP extraction failed: ${errorOutput || 'Unknown error'}`));
+          }
+        });
+
+        ps.on('error', (error: Error) => {
+          reject(new Error(`Failed to start PowerShell: ${error.message}`));
+        });
+      } else {
+        // Use unzip on Unix-like systems
+        const unzip = spawn('unzip', ['-o', zipPath, '-d', extractPath], {
+          stdio: 'pipe',
+        });
+
+        let errorOutput = '';
+        unzip.stderr.on('data', (data: Buffer) => {
+          errorOutput += data.toString();
+        });
+
+        unzip.on('close', (code: number) => {
+          if (code === 0) {
+            this.logger.info(`Successfully extracted ZIP to: ${extractPath}`);
+            resolve();
+          } else {
+            reject(new Error(`ZIP extraction failed: ${errorOutput || 'Unknown error'}`));
+          }
+        });
+
+        unzip.on('error', (error: Error) => {
+          reject(new Error(`Failed to start unzip: ${error.message}`));
+        });
+      }
+    });
   }
 
   private initializeExtensionAPI(
