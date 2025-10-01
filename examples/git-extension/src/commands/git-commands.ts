@@ -4,7 +4,7 @@
 
 import { GitService } from '../services/git-service';
 import { SourceControlProvider } from '../services/source-control-provider';
-import { appShell, ExtensionContext } from '../types';
+import type { ExtensionContext } from '../types';
 import * as path from 'path';
 
 export class GitCommands {

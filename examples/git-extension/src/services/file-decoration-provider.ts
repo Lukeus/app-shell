@@ -3,7 +3,7 @@
  */
 
 import { GitService } from './git-service';
-import { GitFileStatus, GitFileStatusType, appShell } from '../types';
+import type { GitFileStatus, GitFileStatusType } from '../types';
 import * as path from 'path';
 
 export interface FileDecoration {

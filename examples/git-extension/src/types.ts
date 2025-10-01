@@ -115,8 +115,7 @@ export interface StateManager {
   keys(): readonly string[];
 }
 
-// App Shell API interface
-export declare const appShell: {
+export interface AppShellAPI {
   window: {
     showInformationMessage(message: string): void;
     showWarningMessage(message: string): void;
@@ -151,4 +150,11 @@ export declare const appShell: {
     stat(path: string): Promise<{ isDirectory(): boolean; isFile(): boolean }>;
     readdir(path: string): Promise<string[]>;
   };
-};
+}
+
+declare global {
+  const appShell: AppShellAPI;
+}
+
+export type { AppShellAPI as AppShell };
+export {};

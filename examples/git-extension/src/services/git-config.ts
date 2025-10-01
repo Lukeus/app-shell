@@ -3,7 +3,7 @@
  */
 
 import { GitService } from '../services/git-service';
-import { appShell, ExtensionContext } from '../types';
+import type { ExtensionContext } from '../types';
 
 export interface GitUserConfig {
   name?: string;

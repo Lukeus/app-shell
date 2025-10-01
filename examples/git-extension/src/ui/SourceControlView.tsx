@@ -7,7 +7,7 @@ import {
   SourceControlProvider,
   SourceControlResourceGroup,
 } from '../services/source-control-provider';
-import { GitRepository, GitStatus, appShell } from '../types';
+import type { GitRepository, GitStatus } from '../types';
 import { FileStatusItem } from './FileStatusItem';
 import { CommitBox } from './CommitBox';
 import { RepositoryHeader } from './RepositoryHeader';
