@@ -20,12 +20,17 @@ export function registerCommandIPC(
       // First try extension manager (for extension commands)
       try {
         return await extensionManager.executeCommand(input.commandId, ...(input.args || []));
-      } catch (error: any) {
-        if (error.code === 'COMMAND_NOT_FOUND') {
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'COMMAND_NOT_FOUND'
+        ) {
           // Fallback to command manager
           try {
             return await commandManager.executeCommand(input.commandId, ...(input.args || []));
-          } catch (cmdError: any) {
+          } catch (cmdError: unknown) {
             logger.warn(`Command not found in either manager: ${input.commandId}`);
             throw cmdError;
           }

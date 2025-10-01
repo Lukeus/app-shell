@@ -3,7 +3,7 @@ import { Logger } from '../logger';
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
   maxCalls: number; // Maximum calls per window
-  keyGenerator?: (event: any, ...args: any[]) => string; // Custom key generator
+  keyGenerator?: (event: unknown, ...args: unknown[]) => string; // Custom key generator
 }
 
 export interface RateLimitEntry {
@@ -16,6 +16,7 @@ export interface RateLimitEntry {
  */
 export class RateLimiter {
   private logger: Logger;
+  private requests: Map<string, unknown[]> = new Map();
   private limits: Map<string, RateLimitEntry> = new Map();
   private cleanupInterval: NodeJS.Timeout;
 

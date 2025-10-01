@@ -24,7 +24,7 @@ class AppShell {
   private extensionManager: ExtensionManager;
   private settingsManager: SettingsManager;
   private terminalManager: WebTerminalManager; // TerminalManager | MockTerminalManager | WebTerminalManager
-  private ipcManager: IPCManager;
+  private ipcManager!: IPCManager;
   private commandManager: CommandManager;
   private marketplaceService: MarketplaceService;
   private fileSystemManager: FileSystemManager;
@@ -42,7 +42,9 @@ class AppShell {
     this.extensionManager = new ExtensionManager(this.settingsManager);
     // Initialize terminal manager with WebTerminalManager (node-pty will be loaded dynamically in init)
     this.terminalManager = new WebTerminalManager();
-    this.ipcManager = new IPCManager();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const IPCManagerClass = require('./ipc-manager').IPCManager;
+    this.ipcManager = new IPCManagerClass();
     this.commandManager = new CommandManager(this.logger, false); // Disable IPC - handled by modular system
     this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
     this.fileSystemManager = new FileSystemManager();
@@ -52,6 +54,7 @@ class AppShell {
       workspaceRoots: [process.cwd()],
       allowedPaths: [],
       homeDirectory: this.fileSystemManager.getHomeDirectory(),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       tempDirectory: require('os').tmpdir(),
     });
 

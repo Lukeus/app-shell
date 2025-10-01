@@ -114,16 +114,16 @@ interface ElectronAPI {
 }
 
 // Helper wrapper to automatically throw on structured { error } responses
-async function invokeSafe(channel: string, ...args: any[]): Promise<any> {
+async function invokeSafe<T = unknown>(channel: string, ...args: unknown[]): Promise<T> {
   const result = await ipcRenderer.invoke(channel, ...args);
   if (result && typeof result === 'object' && 'error' in result) {
-    const err = (result as any).error;
+    const err = (result as { error: { message?: string; code?: string; details?: unknown } }).error;
     const error = new Error(err.message || 'IPC Error');
-    (error as any).code = err.code;
-    (error as any).details = err.details;
+    (error as Error & { code?: string; details?: unknown }).code = err.code;
+    (error as Error & { code?: string; details?: unknown }).details = err.details;
     throw error;
   }
-  return result;
+  return result as T;
 }
 
 // Create the API object
