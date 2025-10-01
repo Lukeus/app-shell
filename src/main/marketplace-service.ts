@@ -92,9 +92,15 @@ export class MarketplaceService implements IMarketplaceService {
   private async createMockPluginData(): Promise<void> {
     // No longer creating mock data - marketplace is empty until real registries are configured
     const cachePath = path.join(this.cachePath, 'plugins.json');
-    if (!fs.existsSync(cachePath)) {
-      // Create empty plugins file
-      fs.writeFileSync(cachePath, JSON.stringify([], null, 2), 'utf8');
+    try {
+      // Try to read the file first to avoid overwriting existing data
+      fs.readFileSync(cachePath, 'utf8');
+    } catch (error) {
+      // If file doesn't exist, create it atomically
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        fs.writeFileSync(cachePath, JSON.stringify([], null, 2), 'utf8');
+      }
+      // If file exists but has other issues, let it be handled elsewhere
     }
   }
 
