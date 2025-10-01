@@ -129,6 +129,7 @@ export default [
       '**/*.d.ts',
       'webpack.*.config.js',
       'examples/**/out/**',
+      'examples/**/dist/**', // Exclude compiled extension files
       'src/types/**/*.js', // Exclude compiled TypeScript files
     ],
   },
