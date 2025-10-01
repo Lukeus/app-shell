@@ -563,6 +563,7 @@ export class ExtensionManager {
           try {
             // Fallback to CommonJS
             this.logger.debug(`ES module failed, trying CommonJS: ${extensionMainPath}`);
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             extensionModule = require(extensionMainPath);
             this.logger.info(`Successfully loaded CommonJS module: ${extensionMainPath}`);
           } catch (cjsError) {
@@ -771,6 +772,7 @@ export class ExtensionManager {
       // Handle ZIP files - extract them first
       if (path.extname(sourcePath).toLowerCase() === '.zip') {
         this.logger.info('Detected ZIP file, extracting...');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         tempExtractPath = path.join(require('os').tmpdir(), `extension-${Date.now()}`);
         await this.extractZipFile(sourcePath, tempExtractPath);
         workingPath = tempExtractPath;
@@ -1026,9 +1028,13 @@ export class ExtensionManager {
   }
 
   private async extractZipFile(zipPath: string, extractPath: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
     const path = require('path');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars
     const { promisify } = require('util');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { spawn } = require('child_process');
 
     // Create extraction directory

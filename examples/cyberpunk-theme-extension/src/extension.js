@@ -8,7 +8,8 @@
  * - UI/UX enhancements
  */
 
-// Extension state
+/* eslint-env node, browser */
+/* eslint-disable no-undef, no-unused-vars */ // Extension state
 let isGlitchEnabled = false;
 let currentThemeIndex = 0;
 const themes = ['cyberpunk-neon', 'cyberpunk-matrix', 'cyberpunk-blade-runner'];

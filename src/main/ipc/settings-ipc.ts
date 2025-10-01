@@ -1,7 +1,6 @@
 import { registerValidated } from './validators';
 import { IPCManager } from '../ipc-manager';
 import { Logger } from '../logger';
-import { PathSecurity } from './path-security';
 import { SettingsGetSchema, SettingsSetSchema, SettingsGetAllSchema } from './schemas';
 import { SettingsManager } from '../settings-manager';
 import { SettingsValue } from '../../schemas';

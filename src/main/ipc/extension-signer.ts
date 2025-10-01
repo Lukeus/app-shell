@@ -160,14 +160,20 @@ export class ExtensionSigner {
     return files;
   }
 
-  private isValidSignatureFormat(signature: any): signature is ExtensionSignature {
+  private isValidSignatureFormat(signature: unknown): signature is ExtensionSignature {
     return (
       typeof signature === 'object' &&
-      typeof signature.algorithm === 'string' &&
-      typeof signature.signature === 'string' &&
-      typeof signature.publicKeyFingerprint === 'string' &&
-      typeof signature.timestamp === 'number' &&
-      typeof signature.version === 'string'
+      signature !== null &&
+      'algorithm' in signature &&
+      'signature' in signature &&
+      'publicKeyFingerprint' in signature &&
+      'timestamp' in signature &&
+      'version' in signature &&
+      typeof (signature as Record<string, unknown>).algorithm === 'string' &&
+      typeof (signature as Record<string, unknown>).signature === 'string' &&
+      typeof (signature as Record<string, unknown>).publicKeyFingerprint === 'string' &&
+      typeof (signature as Record<string, unknown>).timestamp === 'number' &&
+      typeof (signature as Record<string, unknown>).version === 'string'
     );
   }
 
