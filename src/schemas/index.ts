@@ -20,10 +20,29 @@ export const ExtensionManifestSchema = z.object({
       'app-shell': z.string().optional(),
     })
     .optional(),
-  author: z.string().optional(),
-  repository: z.string().optional(),
+  author: z
+    .union([
+      z.string(),
+      z.object({
+        name: z.string(),
+        email: z.string().optional(),
+        url: z.string().optional(),
+      }),
+    ])
+    .optional(),
+  repository: z
+    .union([
+      z.string(),
+      z.object({
+        type: z.string(),
+        url: z.string(),
+      }),
+    ])
+    .optional(),
   license: z.string().optional(),
   keywords: z.array(z.string()).optional(),
+  categories: z.array(z.string()).optional(),
+  publisher: z.string().optional(),
   contributes: z
     .object({
       commands: z
@@ -42,6 +61,7 @@ export const ExtensionManifestSchema = z.object({
           z.object({
             id: z.string(),
             label: z.string(),
+            uiTheme: z.enum(['vs', 'vs-dark', 'hc-black', 'hc-light']).optional(),
             path: z.string(),
           })
         )
