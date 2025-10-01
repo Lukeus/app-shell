@@ -4,7 +4,7 @@
 
 import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 import * as path from 'path';
-import {
+import type {
   GitRepository,
   GitStatus,
   GitFileStatus,
@@ -14,7 +14,6 @@ import {
   GitDiff,
   GitCloneOptions,
   GitConfig,
-  appShell,
 } from '../types';
 
 export class GitService {

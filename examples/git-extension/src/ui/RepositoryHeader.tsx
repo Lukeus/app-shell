@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { GitRepository, appShell } from '../types';
+import type { GitRepository } from '../types';
 import * as path from 'path';
 
 interface RepositoryHeaderProps {

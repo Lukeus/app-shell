@@ -3,7 +3,7 @@
  */
 
 import { GitService } from './git-service';
-import { GitRepository, GitStatus, GitFileStatus, appShell } from '../types';
+import type { GitRepository, GitStatus, GitFileStatus } from '../types';
 
 export interface SourceControlResourceGroup {
   id: string;

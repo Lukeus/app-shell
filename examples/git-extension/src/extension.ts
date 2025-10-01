@@ -10,7 +10,7 @@ import { GitService } from './services/git-service';
 import { SourceControlProvider } from './services/source-control-provider';
 import { FileDecorationProvider } from './services/file-decoration-provider';
 import { GitCommands } from './commands/git-commands';
-import { ExtensionContext, appShell } from './types';
+import type { ExtensionContext } from './types';
 
 // Global extension services
 let gitService: GitService;
