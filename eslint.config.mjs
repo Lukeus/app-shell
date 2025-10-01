@@ -97,7 +97,7 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.js', '*.js'],
+    files: ['scripts/**/*.js', '*.js', 'examples/**/package-extension.js'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'commonjs',
@@ -129,6 +129,7 @@ export default [
       '**/*.d.ts',
       'webpack.*.config.js',
       'examples/**/out/**',
+      'examples/**/dist/**', // Exclude compiled extension files
       'src/types/**/*.js', // Exclude compiled TypeScript files
     ],
   },

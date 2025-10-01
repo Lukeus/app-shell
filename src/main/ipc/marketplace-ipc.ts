@@ -23,7 +23,7 @@ export function registerMarketplaceIPC(
     capability: 'marketplace.browse',
     handler: async input => {
       // Rate limiting should be applied here in production
-      return marketplaceService.searchPlugins(input as any);
+      return marketplaceService.searchPlugins(input);
     },
   });
 

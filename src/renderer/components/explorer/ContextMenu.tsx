@@ -135,6 +135,8 @@ interface FileContextMenuProps {
   x: number;
   y: number;
   selectedItem: FileItem | null;
+  gitRepoDetected?: boolean;
+  gitDecorations?: Record<string, { badge?: string; color?: string; tooltip?: string }>;
   onItemClick: (action: string, item: FileItem | null) => void;
   onClose: () => void;
 }
@@ -143,127 +145,222 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   x,
   y,
   selectedItem,
+  gitRepoDetected = false,
+  gitDecorations = {},
   onItemClick,
   onClose,
 }) => {
-  const getContextMenuItems = useCallback((item: FileItem | null): MenuItem[] => {
-    const baseItems: MenuItem[] = [
-      {
-        id: 'new-file',
-        label: 'New File',
-        icon: '📄',
-        shortcut: 'Ctrl+N',
-      },
-      {
-        id: 'new-folder',
-        label: 'New Folder',
-        icon: '📁',
-        shortcut: 'Ctrl+Shift+N',
-      },
-      { id: 'sep1', label: '', separator: true },
-    ];
-
-    if (item) {
-      const itemSpecificItems: MenuItem[] = [
+  const getContextMenuItems = useCallback(
+    (item: FileItem | null): MenuItem[] => {
+      const baseItems: MenuItem[] = [
         {
-          id: 'open',
-          label: item.isDirectory ? 'Open Folder' : 'Open File',
-          icon: item.isDirectory ? '📁' : '📄',
-          shortcut: 'Enter',
-        },
-        ...(item.isDirectory
-          ? []
-          : [
-              {
-                id: 'open-with',
-                label: 'Open With...',
-                icon: '🔧',
-              },
-            ]),
-        { id: 'sep2', label: '', separator: true },
-        {
-          id: 'cut',
-          label: 'Cut',
-          icon: '✂️',
-          shortcut: 'Ctrl+X',
+          id: 'new-file',
+          label: 'New File',
+          icon: '📄',
+          shortcut: 'Ctrl+N',
         },
         {
-          id: 'copy',
-          label: 'Copy',
-          icon: '📋',
-          shortcut: 'Ctrl+C',
+          id: 'new-folder',
+          label: 'New Folder',
+          icon: '📁',
+          shortcut: 'Ctrl+Shift+N',
         },
-        {
-          id: 'paste',
-          label: 'Paste',
-          icon: '📋',
-          shortcut: 'Ctrl+V',
-        },
-        { id: 'sep3', label: '', separator: true },
-        {
-          id: 'rename',
-          label: 'Rename',
-          icon: '✏️',
-          shortcut: 'F2',
-        },
-        {
-          id: 'delete',
-          label: 'Delete',
-          icon: '🗑️',
-          shortcut: 'Delete',
-        },
-        { id: 'sep4', label: '', separator: true },
-        {
-          id: 'copy-path',
-          label: 'Copy Path',
-          icon: '📋',
-        },
-        {
-          id: 'copy-relative-path',
-          label: 'Copy Relative Path',
-          icon: '📋',
-        },
-        { id: 'sep5', label: '', separator: true },
-        {
-          id: 'reveal-in-explorer',
-          label: 'Reveal in File Explorer',
-          icon: '📂',
-        },
-        { id: 'sep6', label: '', separator: true },
-        {
-          id: 'properties',
-          label: 'Properties',
-          icon: '⚙️',
-        },
+        { id: 'sep1', label: '', separator: true },
       ];
 
-      return [...baseItems, ...itemSpecificItems];
-    } else {
-      // Context menu for empty space
-      return [
-        ...baseItems,
-        {
-          id: 'paste',
-          label: 'Paste',
-          icon: '📋',
-          shortcut: 'Ctrl+V',
-        },
-        { id: 'sep7', label: '', separator: true },
-        {
-          id: 'refresh',
-          label: 'Refresh',
-          icon: '🔄',
-          shortcut: 'F5',
-        },
-        { id: 'sep8', label: '', separator: true },
-        {
-          id: 'open-in-terminal',
-          label: 'Open in Terminal',
-          icon: '💻',
-        },
-      ];
-    }
-  }, []);
+      if (item) {
+        const itemSpecificItems: MenuItem[] = [
+          {
+            id: 'open',
+            label: item.isDirectory ? 'Open Folder' : 'Open File',
+            icon: item.isDirectory ? '📁' : '📄',
+            shortcut: 'Enter',
+          },
+          ...(item.isDirectory
+            ? []
+            : [
+                {
+                  id: 'open-with',
+                  label: 'Open With...',
+                  icon: '🔧',
+                },
+              ]),
+          { id: 'sep2', label: '', separator: true },
+          {
+            id: 'cut',
+            label: 'Cut',
+            icon: '✂️',
+            shortcut: 'Ctrl+X',
+          },
+          {
+            id: 'copy',
+            label: 'Copy',
+            icon: '📋',
+            shortcut: 'Ctrl+C',
+          },
+          {
+            id: 'paste',
+            label: 'Paste',
+            icon: '📋',
+            shortcut: 'Ctrl+V',
+          },
+          { id: 'sep3', label: '', separator: true },
+          {
+            id: 'rename',
+            label: 'Rename',
+            icon: '✏️',
+            shortcut: 'F2',
+          },
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: '🗑️',
+            shortcut: 'Delete',
+          },
+        ];
+
+        // Add Git-specific menu items if Git repo detected and file has Git status
+        if (gitRepoDetected && item.path && gitDecorations[item.path] && !item.isDirectory) {
+          const gitStatus = gitDecorations[item.path];
+          const gitItems: MenuItem[] = [];
+
+          // Add separator before Git actions
+          gitItems.push({ id: 'sep-git', label: '', separator: true });
+
+          // Stage/unstage based on current status
+          if (gitStatus?.badge === 'M' || gitStatus?.badge === 'U' || gitStatus?.badge === '?') {
+            gitItems.push({
+              id: 'git-stage',
+              label: 'Stage Changes',
+              icon: '➕',
+              shortcut: 'Alt+S',
+            });
+          }
+
+          if (gitStatus?.badge === 'M' || gitStatus?.badge === 'A') {
+            gitItems.push({
+              id: 'git-unstage',
+              label: 'Unstage Changes',
+              icon: '➖',
+              shortcut: 'Alt+U',
+            });
+          }
+
+          // Show diff for modified files
+          if (gitStatus?.badge === 'M' || gitStatus?.badge === 'A') {
+            gitItems.push({
+              id: 'git-open-diff',
+              label: 'View Diff',
+              icon: '🔍',
+              shortcut: 'Alt+D',
+            });
+          }
+
+          // Discard changes for modified or untracked files
+          if (gitStatus?.badge === 'M' || gitStatus?.badge === '?') {
+            gitItems.push({
+              id: 'git-discard',
+              label: 'Discard Changes',
+              icon: '↩️',
+              shortcut: 'Alt+R',
+            });
+          }
+
+          itemSpecificItems.push(...gitItems);
+        }
+
+        const finalItems: MenuItem[] = [
+          ...itemSpecificItems,
+          { id: 'sep4', label: '', separator: true },
+          {
+            id: 'copy-path',
+            label: 'Copy Path',
+            icon: '📋',
+          },
+          {
+            id: 'copy-relative-path',
+            label: 'Copy Relative Path',
+            icon: '📋',
+          },
+          { id: 'sep5', label: '', separator: true },
+          {
+            id: 'reveal-in-explorer',
+            label: 'Reveal in File Explorer',
+            icon: '📂',
+          },
+          { id: 'sep6', label: '', separator: true },
+          {
+            id: 'properties',
+            label: 'Properties',
+            icon: '⚙️',
+          },
+        ];
+
+        return [...baseItems, ...finalItems];
+      } else {
+        // Context menu for empty space
+        const emptySpaceItems = [
+          ...baseItems,
+          {
+            id: 'paste',
+            label: 'Paste',
+            icon: '📋',
+            shortcut: 'Ctrl+V',
+          },
+          { id: 'sep7', label: '', separator: true },
+          {
+            id: 'refresh',
+            label: 'Refresh',
+            icon: '🔄',
+            shortcut: 'F5',
+          },
+        ];
+
+        // Add Git workspace actions if in a Git repo
+        if (gitRepoDetected) {
+          emptySpaceItems.push(
+            { id: 'sep-git-workspace', label: '', separator: true },
+            {
+              id: 'git-stage-all',
+              label: 'Stage All Changes',
+              icon: '➕',
+              shortcut: 'Ctrl+Alt+S',
+            },
+            {
+              id: 'git-commit',
+              label: 'Commit...',
+              icon: '✓',
+              shortcut: 'Ctrl+Enter',
+            },
+            {
+              id: 'git-push',
+              label: 'Push',
+              icon: '⬆️',
+              shortcut: 'Ctrl+Alt+P',
+            },
+            {
+              id: 'git-pull',
+              label: 'Pull',
+              icon: '⬇️',
+              shortcut: 'Ctrl+Alt+L',
+            }
+          );
+        }
+
+        emptySpaceItems.push(
+          { id: 'sep8', label: '', separator: true },
+          {
+            id: 'open-in-terminal',
+            label: 'Open in Terminal',
+            icon: '💻',
+          }
+        );
+
+        return emptySpaceItems;
+      }
+    },
+    [gitRepoDetected, gitDecorations]
+  );
 
   const handleItemClick = useCallback(
     (itemId: string) => {

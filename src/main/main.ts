@@ -86,6 +86,12 @@ class AppShell {
         }
       }
 
+      // Set main window reference in extension manager for event forwarding
+      const mainWindow = this.windowManager.getMainWindow();
+      if (mainWindow) {
+        this.extensionManager.setMainWindow(mainWindow);
+      }
+
       // Initialize extensions
       await this.extensionManager.init();
 
@@ -234,6 +240,7 @@ class AppShell {
       enforcer.grantCapability('terminal.control', rendererContext);
       enforcer.grantCapability('extensions.manage', rendererContext);
       enforcer.grantCapability('extensions.install', rendererContext);
+      enforcer.grantCapability('command.execute', rendererContext);
 
       this.logger.info('Granted default capabilities to main renderer');
     }

@@ -20,6 +20,8 @@ interface FileTreeItemProps {
   isSelected: boolean;
   isRenaming: boolean;
   showHiddenFiles: boolean;
+  // Optional git decorations map keyed by absolute file path
+  decorations?: Record<string, { badge?: string; color?: string; tooltip?: string }>;
   onSelect: (item: FileItem) => void;
   onToggleExpand: (item: FileItem) => void;
   onContextMenu: (event: React.MouseEvent, item: FileItem) => void;
@@ -36,6 +38,7 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
   isSelected,
   isRenaming,
   showHiddenFiles,
+  decorations,
   onSelect,
   onToggleExpand,
   onContextMenu,
@@ -196,6 +199,10 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
   const paddingLeft = `${depth * 16 + 8}px`;
   const hasChildren = item.children && item.children.length > 0;
   const canExpand = item.isDirectory;
+  const decoration = decorations?.[item.path];
+  const appliedColor = decoration?.color || iconInfo.color;
+  const nameTooltipExtra = decoration?.tooltip ? `\nGit: ${decoration.tooltip}` : '';
+  const badge = decoration?.badge;
 
   return (
     <>
@@ -221,7 +228,7 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         tabIndex={0}
-        title={`${item.name}\n${item.path}\nSize: ${formatFileSize(item.size)}\nModified: ${formatDate(item.modified)}`}
+        title={`${item.name}\n${item.path}\nSize: ${formatFileSize(item.size)}\nModified: ${formatDate(item.modified)}${nameTooltipExtra}`}
       >
         {/* Expand/Collapse Button */}
         {canExpand && (
@@ -249,9 +256,25 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
         {/* File Icon */}
         <span
           className="mr-2 text-base leading-none flex-shrink-0"
-          style={{ color: iconInfo.color }}
+          style={{ color: appliedColor, position: 'relative' }}
         >
           {iconInfo.icon}
+          {badge && (
+            <span
+              className="absolute -top-1 -right-1 text-[9px] rounded-sm px-[3px] py-[1px] font-bold shadow-sm"
+              style={{
+                background: decoration?.color || '#666',
+                border: '1px solid rgba(0, 0, 0, 0.3)',
+                color: '#fff',
+                lineHeight: '9px',
+                minWidth: '12px',
+                textAlign: 'center',
+              }}
+              title={decoration?.tooltip}
+            >
+              {badge}
+            </span>
+          )}
         </span>
 
         {/* File Name */}
@@ -276,6 +299,7 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
               flex-1 truncate text-vscode-fg-primary
               ${iconInfo.className || ''}
             `}
+            style={decoration?.color && !item.isDirectory ? { color: decoration.color } : undefined}
           >
             {item.name}
           </span>
@@ -300,6 +324,7 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
               isSelected={false} // Child selection would be managed by parent
               isRenaming={false}
               showHiddenFiles={showHiddenFiles}
+              decorations={decorations}
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
               onContextMenu={onContextMenu}
