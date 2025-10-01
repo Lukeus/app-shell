@@ -443,14 +443,24 @@ export class MarketplaceService implements IMarketplaceService {
   private async getCachedPlugins(): Promise<MarketplacePlugin[]> {
     try {
       const cachePath = path.join(this.cachePath, 'plugins.json');
-      if (!fs.existsSync(cachePath)) {
-        // Initialize with empty plugin list
-        fs.writeFileSync(cachePath, JSON.stringify([], null, 2), 'utf8');
-        return [];
-      }
 
-      const content = fs.readFileSync(cachePath, 'utf8');
-      return JSON.parse(content);
+      // Use a more atomic approach to avoid race conditions
+      try {
+        const content = fs.readFileSync(cachePath, 'utf8');
+        return JSON.parse(content);
+      } catch (error) {
+        // If file doesn't exist or can't be read, create it atomically
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          // File doesn't exist, create it with empty array
+          const emptyData = JSON.stringify([], null, 2);
+          fs.writeFileSync(cachePath, emptyData, 'utf8');
+          return [];
+        } else {
+          // File exists but couldn't be parsed, log error and return empty array
+          this.logger.warn('Failed to parse cached plugins file, returning empty array', error);
+          return [];
+        }
+      }
     } catch (error) {
       this.logger.error('Failed to load cached plugins', error);
       return [];
