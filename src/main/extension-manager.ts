@@ -94,6 +94,8 @@ export class ExtensionManager {
   private extensionsPath: string;
   private globalStoragePath: string;
   private workspaceStoragePath: string;
+  private eventListeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
+  private mainWindow: BrowserWindow | null = null;
 
   constructor(settingsManager: SettingsManager) {
     this.logger = new Logger('ExtensionManager');
@@ -1164,25 +1166,53 @@ export class ExtensionManager {
         },
       },
 
-      // Event API (simplified)
+      // Event API
       events: {
         on: (event: string, callback: (...args: unknown[]) => void) => {
-          // Store event listeners in context for cleanup
+          // Register event listener
+          if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, new Set());
+          }
+          this.eventListeners.get(event)!.add(callback);
+
+          // Create disposable for cleanup
           interface EventSubscription {
             event: string;
             callback: (...args: unknown[]) => void;
             dispose: () => void;
           }
 
-          if (!context.subscriptions.find(sub => (sub as EventSubscription).event === event)) {
-            const disposable: EventSubscription = {
-              event,
-              callback,
-              dispose: () => {
-                // Remove event listener
-              },
-            };
-            context.subscriptions.push(disposable);
+          const disposable: EventSubscription = {
+            event,
+            callback,
+            dispose: () => {
+              const listeners = this.eventListeners.get(event);
+              if (listeners) {
+                listeners.delete(callback);
+                if (listeners.size === 0) {
+                  this.eventListeners.delete(event);
+                }
+              }
+            },
+          };
+          context.subscriptions.push(disposable);
+        },
+        emit: (event: string, ...args: unknown[]) => {
+          // Emit to extension listeners
+          const listeners = this.eventListeners.get(event);
+          if (listeners) {
+            listeners.forEach(callback => {
+              try {
+                callback(...args);
+              } catch (error) {
+                this.logger.error(`Error in event listener for ${event}`, error);
+              }
+            });
+          }
+
+          // Forward to renderer process
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('extension-event', { event, args });
           }
         },
       },
@@ -1232,6 +1262,10 @@ export class ExtensionManager {
     }
   }
 
+  setMainWindow(window: BrowserWindow): void {
+    this.mainWindow = window;
+  }
+
   async dispose(): Promise<void> {
     this.logger.info('Disposing extension manager...');
 
@@ -1247,6 +1281,7 @@ export class ExtensionManager {
     this.extensions.clear();
     this.themes.clear();
     this.commands.clear();
+    this.eventListeners.clear();
 
     this.logger.info('Extension manager disposed');
   }

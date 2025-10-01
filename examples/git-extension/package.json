@@ -149,12 +149,15 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "package": "pnpm build && node package-extension.js"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.3",
     "@types/node": "^18.0.0",
-    "typescript": "^5.0.0",
-    "rimraf": "^3.0.2"
+    "archiver": "^5.3.2",
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "simple-git": "^3.19.1"

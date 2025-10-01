@@ -34,6 +34,8 @@ export const ExplorerView: React.FC = () => {
     >
   >({});
   const [gitRepoDetected, setGitRepoDetected] = useState<boolean>(false);
+  const [gitBranches, setGitBranches] = useState<string[]>([]);
+  const [isBranchSwitching, setIsBranchSwitching] = useState<boolean>(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -47,6 +49,38 @@ export const ExplorerView: React.FC = () => {
     initializeExplorer();
   }, []);
 
+  const extractBranchNames = (branches: unknown): string[] => {
+    if (!Array.isArray(branches)) {
+      return [];
+    }
+
+    const locals: string[] = [];
+    const localSet = new Set<string>();
+    const remotes: string[] = [];
+    const remoteSet = new Set<string>();
+
+    for (const entry of branches as Array<{ name?: string; remote?: string }>) {
+      if (!entry || typeof entry.name !== 'string' || entry.name.length === 0) {
+        continue;
+      }
+
+      if (!entry.remote) {
+        if (!localSet.has(entry.name)) {
+          localSet.add(entry.name);
+          locals.push(entry.name);
+        }
+      } else {
+        const remoteName = `${entry.remote}/${entry.name}`;
+        if (!remoteSet.has(remoteName)) {
+          remoteSet.add(remoteName);
+          remotes.push(remoteName);
+        }
+      }
+    }
+
+    return locals.length > 0 ? locals : remotes;
+  };
+
   const refreshGitStatus = useCallback(async () => {
     try {
       if (!rootPath) return;
@@ -58,6 +92,7 @@ export const ExplorerView: React.FC = () => {
         setGitBranch(null);
         setGitAheadBehind(null);
         setGitDecorations({});
+        setGitBranches([]);
         return;
       }
 
@@ -74,6 +109,19 @@ export const ExplorerView: React.FC = () => {
             setGitBranch(repo.branch);
             setGitAheadBehind({ ahead: repo.status?.ahead || 0, behind: repo.status?.behind || 0 });
           }
+
+          const branches = await service.getBranches?.();
+          if (branches) {
+            const normalized = extractBranchNames(branches);
+            const finalBranches =
+              repo?.branch && !normalized.includes(repo.branch)
+                ? [repo.branch, ...normalized]
+                : normalized;
+            setGitBranches(finalBranches);
+          } else {
+            setGitBranches([]);
+          }
+
           // Build decorations map if status available
           const status = await service.getStatus?.();
           if (status) {
@@ -112,6 +160,8 @@ export const ExplorerView: React.FC = () => {
             collect(status.conflicted || [], false);
             setGitDecorations(map);
           }
+        } else {
+          setGitBranches([]);
         }
       }
     } catch (error) {
@@ -124,81 +174,130 @@ export const ExplorerView: React.FC = () => {
     let cleanup: (() => void) | undefined;
 
     const setupGitEventListeners = () => {
-      // Listen for Git status changes from extension
-      const handleGitStatusChanged = (event: CustomEvent) => {
-        try {
-          const { repository, status } = event.detail;
-          if (repository && status) {
-            setGitBranch(repository.branch);
-            setGitAheadBehind({
-              ahead: status.ahead || 0,
-              behind: status.behind || 0,
-            });
+      // Listen for Git extension events through the electronAPI
+      const handleExtensionEvent = (eventData: { event: string; args: unknown[] }) => {
+        const { event, args } = eventData;
 
-            // Build decorations map
-            const map: Record<string, { badge?: string; color?: string; tooltip?: string }> = {};
-            const collect = (files: unknown[], staged: boolean) => {
-              for (const f of files as any[]) {
-                if (!f || !f.path) continue;
-                let color = staged ? '#00c853' : '#ffab00';
-                switch (f.status) {
-                  case 'A':
-                    color = '#00c853';
-                    break;
-                  case 'D':
-                    color = '#e53935';
-                    break;
-                  case 'R':
-                    color = '#1e88e5';
-                    break;
-                  case 'U':
-                    color = '#d50000';
-                    break;
-                  case '??':
-                    color = '#9e9e9e';
-                    break;
-                }
-                map[f.path] = {
-                  badge: f.status === '??' ? '?' : f.status,
-                  color,
-                  tooltip: `${staged ? 'Staged' : 'Unstaged'} ${statusLabel(f.status)}`,
-                };
-              }
+        switch (event) {
+          case 'git.decorationsChanged': {
+            const data = args[0] as {
+              changedFiles: string[];
+              decorations: Record<string, { badge?: string; color?: string; tooltip?: string }>;
             };
-            collect(status.staged || [], true);
-            collect(status.unstaged || [], false);
-            collect(status.untracked || [], false);
-            collect(status.conflicted || [], false);
-            setGitDecorations(map);
+            if (data && data.decorations) {
+              setGitDecorations(data.decorations);
+            }
+            break;
           }
-        } catch (error) {
-          console.warn('Failed to handle git status change:', error);
+
+          case 'git.statusChanged': {
+            const data = args[0] as {
+              repository?: { branch: string };
+              status?: {
+                ahead: number;
+                behind: number;
+                staged: unknown[];
+                unstaged: unknown[];
+                untracked: unknown[];
+                conflicted: unknown[];
+              };
+            };
+            if (data.repository) {
+              setGitBranch(data.repository.branch);
+            }
+            if (data.status) {
+              setGitAheadBehind({
+                ahead: data.status.ahead || 0,
+                behind: data.status.behind || 0,
+              });
+
+              // Build decorations map from status
+              const map: Record<string, { badge?: string; color?: string; tooltip?: string }> = {};
+              const collect = (files: unknown[], staged: boolean) => {
+                for (const f of files as any[]) {
+                  if (!f || !f.path) continue;
+                  let color = staged ? '#00c853' : '#ffab00';
+                  switch (f.status) {
+                    case 'A':
+                      color = '#00c853';
+                      break;
+                    case 'D':
+                      color = '#e53935';
+                      break;
+                    case 'R':
+                      color = '#1e88e5';
+                      break;
+                    case 'U':
+                      color = '#d50000';
+                      break;
+                    case '??':
+                      color = '#9e9e9e';
+                      break;
+                  }
+                  map[f.path] = {
+                    badge: f.status === '??' ? '?' : f.status,
+                    color,
+                    tooltip: `${staged ? 'Staged' : 'Unstaged'} ${statusLabel(f.status)}`,
+                  };
+                }
+              };
+              collect(data.status.staged || [], true);
+              collect(data.status.unstaged || [], false);
+              collect(data.status.untracked || [], false);
+              collect(data.status.conflicted || [], false);
+              setGitDecorations(map);
+            }
+
+            (async () => {
+              try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const anyWindow: any = window as any;
+                const gitApi = anyWindow?.gitExtensionAPI || anyWindow?.appShell?.git;
+                const service = gitApi?.getGitService?.();
+                const branches = await service?.getBranches?.();
+                if (branches) {
+                  const normalized = extractBranchNames(branches);
+                  const activeBranch = data.repository?.branch;
+                  const finalBranches =
+                    activeBranch && !normalized.includes(activeBranch)
+                      ? [activeBranch, ...normalized]
+                      : normalized;
+                  setGitBranches(finalBranches);
+                }
+              } catch (branchError) {
+                console.warn('Failed to refresh Git branches from status event', branchError);
+              }
+            })();
+            break;
+          }
+
+          case 'git.repositoryActivated': {
+            setGitRepoDetected(true);
+            refreshGitStatus();
+            break;
+          }
+
+          case 'git.noRepository': {
+            setGitRepoDetected(false);
+            setGitBranch(null);
+            setGitAheadBehind(null);
+            setGitDecorations({});
+            setGitBranches([]);
+            break;
+          }
         }
       };
 
-      // Listen for repository activation/deactivation
-      const handleRepoActivated = (event: CustomEvent) => {
-        setGitRepoDetected(true);
-        refreshGitStatus();
-      };
+      // Register listener through electronAPI
+      if (window.electronAPI?.onExtensionEvent) {
+        window.electronAPI.onExtensionEvent(handleExtensionEvent);
 
-      const handleNoRepo = () => {
-        setGitRepoDetected(false);
-        setGitBranch(null);
-        setGitAheadBehind(null);
-        setGitDecorations({});
-      };
-
-      // Use custom events to communicate with Git extension
-      window.addEventListener('git.statusChanged', handleGitStatusChanged as EventListener);
-      window.addEventListener('git.repositoryActivated', handleRepoActivated as EventListener);
-      window.addEventListener('git.noRepository', handleNoRepo as EventListener);
-
-      cleanup = () => {
-        window.removeEventListener('git.statusChanged', handleGitStatusChanged as EventListener);
-        window.removeEventListener('git.repositoryActivated', handleRepoActivated as EventListener);
-        window.removeEventListener('git.noRepository', handleNoRepo as EventListener);
-      };
+        cleanup = () => {
+          if (window.electronAPI?.removeExtensionEventListener) {
+            window.electronAPI.removeExtensionEventListener(handleExtensionEvent);
+          }
+        };
+      }
     };
 
     // Initial setup and fallback refresh
@@ -400,6 +499,44 @@ export const ExplorerView: React.FC = () => {
       setSelectedItem(item);
     }
   }, []);
+
+  const handleBranchSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const targetBranch = event.target.value;
+      if (!targetBranch || targetBranch === gitBranch) {
+        return;
+      }
+
+      setIsBranchSwitching(true);
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyWindow: any = window as any;
+        const gitApi = anyWindow?.gitExtensionAPI || anyWindow?.appShell?.git;
+        const service = gitApi?.getGitService?.();
+
+        if (service?.switchBranch) {
+          await service.switchBranch(targetBranch);
+        } else if (gitApi?.commands?.switchBranch) {
+          await gitApi.commands.switchBranch(targetBranch);
+        } else if (window.electronAPI?.executeCommand) {
+          await window.electronAPI.executeCommand('git.switchBranch', targetBranch);
+        } else {
+          console.warn('Branch switching command not available');
+          return;
+        }
+
+        await refreshGitStatus();
+      } catch (error) {
+        console.error('Failed to switch Git branch', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to switch branch: ${message}`);
+      } finally {
+        setIsBranchSwitching(false);
+      }
+    },
+    [gitBranch, refreshGitStatus]
+  );
 
   const handleDoubleClick = useCallback(
     async (item: FileItem) => {
@@ -834,29 +971,50 @@ export const ExplorerView: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-1">
-          {gitRepoDetected &&
-            (() => {
-              const aheadBehindText = gitAheadBehind
-                ? `\nAhead: ${gitAheadBehind.ahead} Behind: ${gitAheadBehind.behind}`
-                : '';
-              const title = `Git Repository${gitBranch ? `\nBranch: ${gitBranch}` : ''}${aheadBehindText}`;
-              return (
-                <div
-                  className="flex items-center text-[10px] px-1 py-0.5 rounded bg-vscode-badge-bg text-vscode-badge-fg gap-1 border border-vscode-border"
-                  title={title}
-                  style={{ lineHeight: '10px' }}
+          {gitRepoDetected && (
+            <div className="flex items-center gap-1">
+              {(() => {
+                const aheadBehindText = gitAheadBehind
+                  ? `\nAhead: ${gitAheadBehind.ahead} Behind: ${gitAheadBehind.behind}`
+                  : '';
+                const title = `Git Repository${gitBranch ? `\nBranch: ${gitBranch}` : ''}${aheadBehindText}`;
+                return (
+                  <div
+                    className="flex items-center text-[10px] px-1 py-0.5 rounded bg-vscode-badge-bg text-vscode-badge-fg gap-1 border border-vscode-border"
+                    title={title}
+                    style={{ lineHeight: '10px' }}
+                  >
+                    <span style={{ fontSize: '11px' }}></span>
+                    {gitBranch && gitBranches.length === 0 && (
+                      <span className="font-medium">{gitBranch}</span>
+                    )}
+                    {gitAheadBehind && (gitAheadBehind.ahead > 0 || gitAheadBehind.behind > 0) && (
+                      <span className="opacity-80">
+                        {gitAheadBehind.ahead > 0 && `↑${gitAheadBehind.ahead}`}
+                        {gitAheadBehind.behind > 0 && `↓${gitAheadBehind.behind}`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+              {gitBranches.length > 0 && (
+                <select
+                  className="text-[10px] px-1 py-0.5 rounded border border-vscode-border bg-vscode-input-background text-vscode-fg-primary focus:outline-none focus:border-vscode-accent disabled:opacity-60"
+                  value={gitBranch ?? ''}
+                  onChange={handleBranchSelect}
+                  disabled={isBranchSwitching}
+                  title="Switch Git branch"
                 >
-                  <span style={{ fontSize: '11px' }}></span>
-                  {gitBranch && <span className="font-medium">{gitBranch}</span>}
-                  {gitAheadBehind && (gitAheadBehind.ahead > 0 || gitAheadBehind.behind > 0) && (
-                    <span className="opacity-80">
-                      {gitAheadBehind.ahead > 0 && `↑${gitAheadBehind.ahead}`}
-                      {gitAheadBehind.behind > 0 && `↓${gitAheadBehind.behind}`}
-                    </span>
-                  )}
-                </div>
-              );
-            })()}
+                  {!gitBranch && <option value="">Select branch</option>}
+                  {gitBranches.map(branchName => (
+                    <option key={branchName} value={branchName}>
+                      {branchName}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
           <button
             onClick={() => setShowHiddenFiles(!showHiddenFiles)}
             className={`text-xs px-1 py-0.5 rounded ${
