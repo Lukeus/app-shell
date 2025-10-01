@@ -15,7 +15,7 @@ export interface ValidationOptions<T extends ZodTypeAny> {
   pathValidation?: {
     pathFields: string[]; // Fields in input that contain paths to validate
     operation: 'read' | 'write' | 'delete' | 'execute';
-    pathSecurity?: any; // PathSecurity instance (typed as any to avoid circular deps for now)
+    pathSecurity?: unknown; // PathSecurity instance (typed as unknown to avoid circular deps for now)
   };
 }
 
@@ -89,17 +89,19 @@ export function registerValidated<T extends ZodTypeAny>(
       // Path validation if configured
       if (opts.pathValidation && opts.pathValidation.pathSecurity) {
         for (const field of opts.pathValidation.pathFields) {
-          const pathValue = (input as any)[field];
+          const pathValue = (input as Record<string, unknown>)[field];
           if (pathValue && typeof pathValue === 'string') {
             try {
-              opts.pathValidation.pathSecurity.assertAllowed(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (opts.pathValidation.pathSecurity as any).assertAllowed(
                 pathValue,
                 opts.pathValidation.operation
               );
-            } catch (pathError: any) {
+            } catch (pathError: unknown) {
+              const error = pathError as { code?: string; message: string };
               logger.warn(`Path validation failed for ${opts.channel}.${field}: ${pathValue}`);
               return {
-                error: { code: pathError.code || 'PATH_ACCESS_DENIED', message: pathError.message },
+                error: { code: error.code || 'PATH_ACCESS_DENIED', message: error.message },
               };
             }
           }
@@ -108,11 +110,12 @@ export function registerValidated<T extends ZodTypeAny>(
 
       const result = await opts.handler(input, event);
       return result;
-    } catch (err: any) {
-      if (err?.name === 'ZodError') {
-        logger.warn(`Validation failed for ${opts.channel}`, err.issues);
+    } catch (err: unknown) {
+      const zodError = err as { name?: string; issues?: unknown[] };
+      if (zodError?.name === 'ZodError') {
+        logger.warn(`Validation failed for ${opts.channel}`, zodError.issues);
         return {
-          error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: err.issues },
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: zodError.issues },
         };
       }
       logger.error(`Handler error for ${opts.channel}`, err);

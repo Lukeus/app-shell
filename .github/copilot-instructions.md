@@ -4,6 +4,20 @@
 
 This is an enterprise-grade, cross-platform Electron application shell with extension support, similar to VS Code. It's designed as a reusable template for building extensible desktop applications.
 
+## Todos
+
+- keep a TODOS.md file in the './docs' folder to track all todos and task for each feature or component or task
+- format the todos and completed-todos as a table with columns for title, description, priority, status, and date created
+- each todo should have a title, description, priority (low, medium, high), and status (open, in progress, completed)
+- when a todo is completed, move it to a 'completed-todos.md' file in the same folder with the completion date
+- make sure to remove the completed todo from the TODOS.md file once it's been added to the completed-todos.md file
+- Todos.md should only contain open and in-progress todos.
+- categorize todos by feature or component (e.g., "File Explorer", "Extension System", "Settings", etc.)
+- regularly review and update the todos list to ensure it reflects the current state of the project
+- use the todos to track "Atomoic Problems" and break them down into smaller, manageable tasks
+- maintain the TODOS.md file as a living document throughout the project lifecycle
+- make sure we don't duplicate todos and keep them organized by feature or component
+
 ## Architecture Guidelines
 
 ### Code Quality

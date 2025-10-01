@@ -18,6 +18,22 @@ export const ExplorerView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showHiddenFiles, setShowHiddenFiles] = useState(false);
   const [renamingItem, setRenamingItem] = useState<FileItem | null>(null);
+  // Git integration state
+  const [gitBranch, setGitBranch] = useState<string | null>(null);
+  const [gitAheadBehind, setGitAheadBehind] = useState<{ ahead: number; behind: number } | null>(
+    null
+  );
+  const [gitDecorations, setGitDecorations] = useState<
+    Record<
+      string,
+      {
+        badge?: string;
+        color?: string;
+        tooltip?: string;
+      }
+    >
+  >({});
+  const [gitRepoDetected, setGitRepoDetected] = useState<boolean>(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -30,6 +46,167 @@ export const ExplorerView: React.FC = () => {
   useEffect(() => {
     initializeExplorer();
   }, []);
+
+  const refreshGitStatus = useCallback(async () => {
+    try {
+      if (!rootPath) return;
+      // Heuristic: check for .git directory
+      const gitDirPath = await window.electronAPI?.joinPath?.(rootPath, '.git');
+      const exists = gitDirPath ? await window.electronAPI?.exists?.(gitDirPath) : false;
+      setGitRepoDetected(!!exists);
+      if (!exists) {
+        setGitBranch(null);
+        setGitAheadBehind(null);
+        setGitDecorations({});
+        return;
+      }
+
+      // Attempt to query git-extension API if present on window (injected by extension runtime)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyWindow: any = window as any;
+      const gitApi = anyWindow?.gitExtensionAPI || anyWindow?.appShell?.git;
+      // Fallback: we can try calling a command if registered
+      if (gitApi?.getGitService) {
+        const service = gitApi.getGitService();
+        if (service) {
+          const repo = await service.getRepository?.();
+          if (repo) {
+            setGitBranch(repo.branch);
+            setGitAheadBehind({ ahead: repo.status?.ahead || 0, behind: repo.status?.behind || 0 });
+          }
+          // Build decorations map if status available
+          const status = await service.getStatus?.();
+          if (status) {
+            const map: Record<string, { badge?: string; color?: string; tooltip?: string }> = {};
+            const collect = (files: unknown[], staged: boolean) => {
+              for (const f of files as any[]) {
+                if (!f || !f.path) continue;
+                let color = staged ? '#00c853' : '#ffab00';
+                switch (f.status) {
+                  case 'A':
+                    color = '#00c853';
+                    break;
+                  case 'D':
+                    color = '#e53935';
+                    break;
+                  case 'R':
+                    color = '#1e88e5';
+                    break;
+                  case 'U':
+                    color = '#d50000';
+                    break;
+                  case '??':
+                    color = '#9e9e9e';
+                    break;
+                }
+                map[f.path] = {
+                  badge: f.status === '??' ? '?' : f.status,
+                  color,
+                  tooltip: `${staged ? 'Staged' : 'Unstaged'} ${statusLabel(f.status)}`,
+                };
+              }
+            };
+            collect(status.staged || [], true);
+            collect(status.unstaged || [], false);
+            collect(status.untracked || [], false);
+            collect(status.conflicted || [], false);
+            setGitDecorations(map);
+          }
+        }
+      }
+    } catch (error) {
+      // Non-fatal
+    }
+  }, [rootPath]);
+
+  // Event-driven Git status refresh - listen for extension events
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    const setupGitEventListeners = () => {
+      // Listen for Git status changes from extension
+      const handleGitStatusChanged = (event: CustomEvent) => {
+        try {
+          const { repository, status } = event.detail;
+          if (repository && status) {
+            setGitBranch(repository.branch);
+            setGitAheadBehind({
+              ahead: status.ahead || 0,
+              behind: status.behind || 0,
+            });
+
+            // Build decorations map
+            const map: Record<string, { badge?: string; color?: string; tooltip?: string }> = {};
+            const collect = (files: unknown[], staged: boolean) => {
+              for (const f of files as any[]) {
+                if (!f || !f.path) continue;
+                let color = staged ? '#00c853' : '#ffab00';
+                switch (f.status) {
+                  case 'A':
+                    color = '#00c853';
+                    break;
+                  case 'D':
+                    color = '#e53935';
+                    break;
+                  case 'R':
+                    color = '#1e88e5';
+                    break;
+                  case 'U':
+                    color = '#d50000';
+                    break;
+                  case '??':
+                    color = '#9e9e9e';
+                    break;
+                }
+                map[f.path] = {
+                  badge: f.status === '??' ? '?' : f.status,
+                  color,
+                  tooltip: `${staged ? 'Staged' : 'Unstaged'} ${statusLabel(f.status)}`,
+                };
+              }
+            };
+            collect(status.staged || [], true);
+            collect(status.unstaged || [], false);
+            collect(status.untracked || [], false);
+            collect(status.conflicted || [], false);
+            setGitDecorations(map);
+          }
+        } catch (error) {
+          console.warn('Failed to handle git status change:', error);
+        }
+      };
+
+      // Listen for repository activation/deactivation
+      const handleRepoActivated = (event: CustomEvent) => {
+        setGitRepoDetected(true);
+        refreshGitStatus();
+      };
+
+      const handleNoRepo = () => {
+        setGitRepoDetected(false);
+        setGitBranch(null);
+        setGitAheadBehind(null);
+        setGitDecorations({});
+      };
+
+      // Use custom events to communicate with Git extension
+      window.addEventListener('git.statusChanged', handleGitStatusChanged as EventListener);
+      window.addEventListener('git.repositoryActivated', handleRepoActivated as EventListener);
+      window.addEventListener('git.noRepository', handleNoRepo as EventListener);
+
+      cleanup = () => {
+        window.removeEventListener('git.statusChanged', handleGitStatusChanged as EventListener);
+        window.removeEventListener('git.repositoryActivated', handleRepoActivated as EventListener);
+        window.removeEventListener('git.noRepository', handleNoRepo as EventListener);
+      };
+    };
+
+    // Initial setup and fallback refresh
+    setupGitEventListeners();
+    refreshGitStatus(); // Initial load
+
+    return cleanup;
+  }, [rootPath, refreshGitStatus]);
 
   // Add keyboard event listeners
   useEffect(() => {
@@ -132,9 +309,32 @@ export const ExplorerView: React.FC = () => {
       if (tree) {
         setFileTree(tree as FileItem);
       }
+      // After loading tree attempt git status detection
+      await refreshGitStatus();
     } catch (err) {
       setError('Failed to load directory contents');
       console.error('File tree loading error:', err);
+    }
+  };
+
+  const statusLabel = (code: string): string => {
+    switch (code) {
+      case 'M':
+        return 'Modified';
+      case 'A':
+        return 'Added';
+      case 'D':
+        return 'Deleted';
+      case 'R':
+        return 'Renamed';
+      case 'C':
+        return 'Copied';
+      case 'U':
+        return 'Conflicted';
+      case '??':
+        return 'Untracked';
+      default:
+        return 'Changed';
     }
   };
 
@@ -343,6 +543,47 @@ export const ExplorerView: React.FC = () => {
               await showFileProperties(item);
             }
             break;
+
+          // Git Actions
+          case 'git-stage':
+            if (item) {
+              await handleGitAction('stage', item.path);
+            }
+            break;
+
+          case 'git-unstage':
+            if (item) {
+              await handleGitAction('unstage', item.path);
+            }
+            break;
+
+          case 'git-discard':
+            if (item && confirm(`Discard changes in "${item.name}"? This cannot be undone.`)) {
+              await handleGitAction('discard', item.path);
+            }
+            break;
+
+          case 'git-open-diff':
+            if (item) {
+              await handleGitAction('openDiff', item.path);
+            }
+            break;
+
+          case 'git-stage-all':
+            await handleGitAction('stageAll');
+            break;
+
+          case 'git-commit':
+            await handleGitAction('commit');
+            break;
+
+          case 'git-push':
+            await handleGitAction('push');
+            break;
+
+          case 'git-pull':
+            await handleGitAction('pull');
+            break;
         }
       } catch (err) {
         console.error('Context menu action error:', err);
@@ -350,6 +591,37 @@ export const ExplorerView: React.FC = () => {
     },
     [rootPath, handleDoubleClick, loadFileTree]
   );
+
+  // Git action handler
+  const handleGitAction = async (action: string, filePath?: string) => {
+    try {
+      // Try to execute Git command through extension API or electron command system
+      const commandId = `git.${action}`;
+      const args = filePath ? [filePath] : [];
+
+      // First try extension API if available
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyWindow: any = window as any;
+      const gitApi = anyWindow?.gitExtensionAPI || anyWindow?.appShell?.git;
+
+      if (gitApi?.commands?.[action]) {
+        await gitApi.commands[action](...args);
+      } else if (window.electronAPI?.executeCommand) {
+        // Fallback to command system
+        await window.electronAPI.executeCommand(commandId, ...args);
+      } else {
+        console.warn(`Git action not available: ${action}`);
+        return;
+      }
+
+      // Trigger manual refresh if events don't fire
+      setTimeout(() => refreshGitStatus(), 100);
+    } catch (error) {
+      console.error(`Git action failed: ${action}`, error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Git ${action} failed: ${errorMsg}`);
+    }
+  };
 
   const handleDragStart = useCallback((event: React.DragEvent, item: FileItem) => {
     event.dataTransfer.setData('application/json', JSON.stringify(item));
@@ -562,6 +834,29 @@ export const ExplorerView: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-1">
+          {gitRepoDetected &&
+            (() => {
+              const aheadBehindText = gitAheadBehind
+                ? `\nAhead: ${gitAheadBehind.ahead} Behind: ${gitAheadBehind.behind}`
+                : '';
+              const title = `Git Repository${gitBranch ? `\nBranch: ${gitBranch}` : ''}${aheadBehindText}`;
+              return (
+                <div
+                  className="flex items-center text-[10px] px-1 py-0.5 rounded bg-vscode-badge-bg text-vscode-badge-fg gap-1 border border-vscode-border"
+                  title={title}
+                  style={{ lineHeight: '10px' }}
+                >
+                  <span style={{ fontSize: '11px' }}></span>
+                  {gitBranch && <span className="font-medium">{gitBranch}</span>}
+                  {gitAheadBehind && (gitAheadBehind.ahead > 0 || gitAheadBehind.behind > 0) && (
+                    <span className="opacity-80">
+                      {gitAheadBehind.ahead > 0 && `↑${gitAheadBehind.ahead}`}
+                      {gitAheadBehind.behind > 0 && `↓${gitAheadBehind.behind}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           <button
             onClick={() => setShowHiddenFiles(!showHiddenFiles)}
             className={`text-xs px-1 py-0.5 rounded ${
@@ -592,11 +887,12 @@ export const ExplorerView: React.FC = () => {
       >
         {fileTree ? (
           <FileTreeItem
-            item={fileTree}
+            item={fileTree as FileItem}
             depth={0}
-            isSelected={selectedItem?.path === fileTree.path}
-            isRenaming={renamingItem?.path === fileTree.path}
+            isSelected={selectedItem?.path === fileTree?.path}
+            isRenaming={renamingItem?.path === fileTree?.path}
             showHiddenFiles={showHiddenFiles}
+            decorations={gitDecorations}
             onSelect={handleSelectItem}
             onToggleExpand={handleToggleExpand}
             onContextMenu={handleContextMenu}
@@ -617,6 +913,8 @@ export const ExplorerView: React.FC = () => {
           x={contextMenu.x}
           y={contextMenu.y}
           selectedItem={contextMenu.item}
+          gitRepoDetected={gitRepoDetected}
+          gitDecorations={gitDecorations}
           onItemClick={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
         />

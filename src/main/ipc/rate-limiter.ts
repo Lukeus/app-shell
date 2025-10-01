@@ -145,7 +145,10 @@ export const DEFAULT_RATE_LIMITS = {
 /**
  * Generate rate limit key from IPC event context
  */
-export function generateRateLimitKey(event: any, prefix: string): string {
+export function generateRateLimitKey(
+  event: { sender?: { id?: number }; frameId?: number },
+  prefix: string
+): string {
   // In production, could use session ID, user ID, etc.
   // For now, use a combination of sender frame info
   const senderId = event.sender?.id || 'unknown';
