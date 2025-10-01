@@ -68,6 +68,12 @@ interface ElectronAPI {
   onCommandPaletteToggle?: (callback: () => void) => void;
   removeCommandPaletteListener?: (callback: () => void) => void;
 
+  // Extension events
+  onExtensionEvent?: (callback: (event: { event: string; args: unknown[] }) => void) => void;
+  removeExtensionEventListener?: (
+    callback: (event: { event: string; args: unknown[] }) => void
+  ) => void;
+
   // File system
   showOpenDialog: (options: Electron.OpenDialogOptions) => Promise<Electron.OpenDialogReturnValue>;
   showSaveDialog: (options: Electron.SaveDialogOptions) => Promise<Electron.SaveDialogReturnValue>;
@@ -112,6 +118,11 @@ interface ElectronAPI {
     pluginId: string
   ) => Promise<{ status: string; progress: number; error?: string }>;
 }
+
+const extensionEventListeners = new Map<
+  (event: { event: string; args: unknown[] }) => void,
+  (event: Electron.IpcRendererEvent, data: { event: string; args: unknown[] }) => void
+>();
 
 // Helper wrapper to automatically throw on structured { error } responses
 async function invokeSafe<T = unknown>(channel: string, ...args: unknown[]): Promise<T> {
@@ -198,6 +209,30 @@ const electronAPI: ElectronAPI = {
   },
   removeCommandPaletteListener: (callback: () => void) => {
     ipcRenderer.removeListener('commandPalette:toggle', callback);
+  },
+
+  // Extension events from extensions
+  onExtensionEvent: (callback: (event: { event: string; args: unknown[] }) => void) => {
+    if (extensionEventListeners.has(callback)) {
+      return;
+    }
+
+    const listener = (
+      _ipcEvent: Electron.IpcRendererEvent,
+      data: { event: string; args: unknown[] }
+    ) => {
+      callback(data);
+    };
+
+    extensionEventListeners.set(callback, listener);
+    ipcRenderer.on('extension-event', listener);
+  },
+  removeExtensionEventListener: (callback: (event: { event: string; args: unknown[] }) => void) => {
+    const listener = extensionEventListeners.get(callback);
+    if (listener) {
+      ipcRenderer.removeListener('extension-event', listener);
+      extensionEventListeners.delete(callback);
+    }
   },
 
   // File system

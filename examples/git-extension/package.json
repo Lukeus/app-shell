@@ -1,0 +1,165 @@
+{
+  "name": "git-extension",
+  "displayName": "Git Source Control",
+  "version": "1.0.0",
+  "description": "Git source control integration for App Shell",
+  "main": "./dist/extension.js",
+  "author": "App Shell Team",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "source-control",
+    "version-control",
+    "scm"
+  ],
+  "engines": {
+    "app-shell": "^1.0.0"
+  },
+  "categories": [
+    "SCM Providers"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "git.stage",
+        "title": "Stage Changes",
+        "category": "Git",
+        "icon": "$(add)"
+      },
+      {
+        "command": "git.unstage",
+        "title": "Unstage Changes",
+        "category": "Git",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "git.commit",
+        "title": "Commit",
+        "category": "Git",
+        "icon": "$(check)"
+      },
+      {
+        "command": "git.push",
+        "title": "Push",
+        "category": "Git",
+        "icon": "$(repo-push)"
+      },
+      {
+        "command": "git.pull",
+        "title": "Pull",
+        "category": "Git",
+        "icon": "$(repo-pull)"
+      },
+      {
+        "command": "git.refresh",
+        "title": "Refresh",
+        "category": "Git",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "git.openFile",
+        "title": "Open File",
+        "category": "Git"
+      },
+      {
+        "command": "git.openDiff",
+        "title": "Open Changes",
+        "category": "Git",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "git.discardChanges",
+        "title": "Discard Changes",
+        "category": "Git",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "git.clone",
+        "title": "Clone Repository",
+        "category": "Git",
+        "icon": "$(repo-clone)"
+      },
+      {
+        "command": "git.init",
+        "title": "Initialize Repository",
+        "category": "Git",
+        "icon": "$(repo)"
+      }
+    ],
+    "views": {
+      "scm": [
+        {
+          "id": "git.sourceControl",
+          "name": "Source Control",
+          "when": "git.enabled",
+          "icon": "$(source-control)"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "scm",
+          "title": "Source Control",
+          "icon": "$(source-control)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Git",
+      "properties": {
+        "git.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Git source control integration"
+        },
+        "git.path": {
+          "type": "string",
+          "default": "git",
+          "description": "Path to git executable"
+        },
+        "git.autoFetch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fetch from remote repositories"
+        },
+        "git.autoPush": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically push commits to remote repositories"
+        },
+        "git.confirmSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Confirm before synchronizing git repositories"
+        },
+        "git.defaultCloneDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Default directory for git clone operations"
+        },
+        "git.decorations.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show git file decorations in the explorer"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "package": "pnpm build && node package-extension.js"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.3",
+    "@types/node": "^18.0.0",
+    "archiver": "^5.3.2",
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "simple-git": "^3.19.1"
+  }
+}
