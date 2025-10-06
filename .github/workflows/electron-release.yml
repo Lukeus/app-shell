@@ -229,7 +229,7 @@ jobs:
         id: version_update
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           branch: ${{ steps.version_update.outputs.release_branch }}
