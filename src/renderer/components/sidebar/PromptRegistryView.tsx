@@ -53,12 +53,12 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
   // Set up event listeners
   useEffect(() => {
     const handlePromptAdded = (prompt: Prompt) => {
-      setPrompts(prev => [...prev, prompt]);
+      setPrompts(prev => [...(prev || []), prompt]);
       updateCategoryCount(prompt.category, 1);
     };
 
     const handlePromptUpdated = (prompt: Prompt) => {
-      setPrompts(prev => prev.map(p => (p.id === prompt.id ? prompt : p)));
+      setPrompts(prev => (prev || []).map(p => (p.id === prompt.id ? prompt : p)));
       if (selectedPrompt?.id === prompt.id) {
         setSelectedPrompt(prompt);
       }
@@ -66,11 +66,12 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
     const handlePromptRemoved = (promptId: string) => {
       setPrompts(prev => {
-        const removed = prev.find(p => p.id === promptId);
+        const safeArray = prev || [];
+        const removed = safeArray.find(p => p.id === promptId);
         if (removed) {
           updateCategoryCount(removed.category, -1);
         }
-        return prev.filter(p => p.id !== promptId);
+        return safeArray.filter(p => p.id !== promptId);
       });
       if (selectedPrompt?.id === promptId) {
         setSelectedPrompt(null);
@@ -101,7 +102,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
   const updateCategoryCount = (categoryId: string, delta: number) => {
     setCategories(prev =>
-      prev.map(cat =>
+      (prev || []).map(cat =>
         cat.id === categoryId ? { ...cat, promptCount: Math.max(0, cat.promptCount + delta) } : cat
       )
     );
@@ -246,7 +247,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       const isFavorite = await window.electronAPI?.togglePromptFavorite?.(prompt.id);
       // Update local state immediately for better UX
       if (typeof isFavorite === 'boolean') {
-        setPrompts(prev => prev.map(p => (p.id === prompt.id ? { ...p, isFavorite } : p)));
+        setPrompts(prev => (prev || []).map(p => (p.id === prompt.id ? { ...p, isFavorite } : p)));
         if (selectedPrompt?.id === prompt.id) {
           setSelectedPrompt({ ...selectedPrompt, isFavorite });
         }
