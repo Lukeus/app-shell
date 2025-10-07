@@ -21,7 +21,7 @@ module.exports = {
     },
     // Force case-insensitive filesystem compatibility
     fallback: {
-      'globalThis': require.resolve('globalthis'),
+      globalThis: require.resolve('globalthis'),
     },
   },
   module: {
