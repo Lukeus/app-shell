@@ -68,18 +68,6 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
     });
   };
 
-  const handleTagAdd = (tag: string) => {
-    if (!tag.trim()) return;
-
-    const currentTags = searchQuery.tags || [];
-    if (currentTags.includes(tag.trim())) return;
-
-    onSearchChange({
-      ...searchQuery,
-      tags: [...currentTags, tag.trim()],
-    });
-  };
-
   const handleTagRemove = (tag: string) => {
     const currentTags = searchQuery.tags || [];
     const newTags = currentTags.filter(t => t !== tag);
