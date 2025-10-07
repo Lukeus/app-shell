@@ -109,26 +109,42 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
   const loadCategories = async () => {
     try {
-      const result = await window.electronAPI?.getPromptCategories?.();
-      if (result) {
+      if (!window.electronAPI?.getPromptCategories) {
+        console.warn('Prompt categories API not available');
+        setCategories([]);
+        return;
+      }
+      const result = await window.electronAPI.getPromptCategories();
+      if (result && Array.isArray(result)) {
         setCategories(result);
+      } else {
+        setCategories([]); // Ensure we have a default empty array
       }
     } catch (err) {
       console.error('Failed to load categories:', err);
       setError('Failed to load categories');
+      setCategories([]); // Set empty array on error
     }
   };
 
   const loadPrompts = async () => {
     try {
       setLoading(true);
-      const result = await window.electronAPI?.getAllPrompts?.();
-      if (result) {
+      if (!window.electronAPI?.getAllPrompts) {
+        console.warn('Get all prompts API not available');
+        setPrompts([]);
+        return;
+      }
+      const result = await window.electronAPI.getAllPrompts();
+      if (result && Array.isArray(result)) {
         setPrompts(result);
+      } else {
+        setPrompts([]); // Ensure we have a default empty array
       }
     } catch (err) {
       console.error('Failed to load prompts:', err);
       setError('Failed to load prompts');
+      setPrompts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -140,11 +156,16 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       const result = await window.electronAPI?.searchPrompts?.(searchQuery);
       if (result) {
         setSearchResult(result);
-        setPrompts(result.prompts);
+        setPrompts(result.prompts || []);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to search prompts:', err);
       setError('Failed to search prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -157,10 +178,15 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       if (result) {
         setPrompts(result);
         setSearchResult(null);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to load recent prompts:', err);
       setError('Failed to load recent prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -173,10 +199,15 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       if (result) {
         setPrompts(result);
         setSearchResult(null);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to load favorite prompts:', err);
       setError('Failed to load favorite prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -259,7 +290,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
   };
 
   const filteredPrompts = useMemo(() => {
-    return prompts; // Already filtered by search or tab selection
+    return prompts || []; // Ensure we never return undefined
   }, [prompts]);
 
   return (
@@ -347,7 +378,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="text-sm text-vscode-fg-muted">Loading prompts...</div>
           </div>
-        ) : filteredPrompts.length === 0 ? (
+        ) : !filteredPrompts || filteredPrompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="text-2xl mb-2">📝</div>
             <div className="text-sm text-vscode-fg-muted mb-2">
