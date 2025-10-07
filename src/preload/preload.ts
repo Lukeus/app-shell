@@ -6,6 +6,15 @@ import {
   Theme,
   CommandRegistration,
   SettingsValue,
+  Prompt,
+  PromptCategory,
+  PromptSearchQuery,
+  PromptSearchResult,
+  PromptImportOptions,
+  PromptImportResult,
+  PromptExportOptions,
+  PromptExportResult,
+  PromptRegistryConfig,
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
 
@@ -117,6 +126,35 @@ interface ElectronAPI {
   getPluginInstallationStatus: (
     pluginId: string
   ) => Promise<{ status: string; progress: number; error?: string }>;
+
+  // Prompt Registry
+  searchPrompts: (query: PromptSearchQuery) => Promise<PromptSearchResult>;
+  getPrompt: (id: string) => Promise<Prompt | null>;
+  getAllPrompts: () => Promise<Prompt[]>;
+  getPromptsByCategory: (categoryId: string) => Promise<Prompt[]>;
+  getPromptCategories: () => Promise<PromptCategory[]>;
+  getRecentPrompts: () => Promise<Prompt[]>;
+  getFavoritePrompts: () => Promise<Prompt[]>;
+  addPrompt: (prompt: Prompt) => Promise<void>;
+  updatePrompt: (prompt: Prompt) => Promise<void>;
+  deletePrompt: (id: string) => Promise<void>;
+  togglePromptFavorite: (id: string) => Promise<boolean>;
+  recordPromptUsage: (id: string) => Promise<void>;
+  importFromFabric: (options: PromptImportOptions) => Promise<PromptImportResult>;
+  exportPrompts: (options: PromptExportOptions) => Promise<PromptExportResult>;
+  createPromptBackup: () => Promise<{ backupPath: string }>;
+  getPromptConfig: () => Promise<PromptRegistryConfig>;
+  updatePromptConfig: (config: Partial<PromptRegistryConfig>) => Promise<void>;
+  selectImportSource: (options?: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) => Promise<Electron.OpenDialogReturnValue>;
+  selectExportTarget: (options?: { title?: string; defaultPath?: string }) => Promise<Electron.OpenDialogReturnValue>;
+
+  // Prompt Registry Events
+  onPromptAdded?: (callback: (prompt: Prompt) => void) => void;
+  onPromptUpdated?: (callback: (prompt: Prompt) => void) => void;
+  onPromptRemoved?: (callback: (id: string) => void) => void;
+  onPromptImportCompleted?: (callback: (result: PromptImportResult) => void) => void;
+  onPromptExportCompleted?: (callback: (result: PromptExportResult) => void) => void;
+  removePromptEventListener?: (eventType: string, callback: (...args: any[]) => void) => void;
 }
 
 const extensionEventListeners = new Map<
@@ -289,6 +327,77 @@ const electronAPI: ElectronAPI = {
   checkPluginUpdates: () => ipcRenderer.invoke('marketplace:checkUpdates', {}),
   getPluginInstallationStatus: (pluginId: string) =>
     ipcRenderer.invoke('marketplace:getInstallationStatus', { pluginId }),
+
+  // Prompt Registry
+  searchPrompts: (query: PromptSearchQuery) => 
+    invokeSafe('prompt-registry:search-prompts', { query }),
+  getPrompt: (id: string) => 
+    invokeSafe('prompt-registry:get-prompt', { id }),
+  getAllPrompts: () => 
+    invokeSafe('prompt-registry:get-all-prompts', {}),
+  getPromptsByCategory: (categoryId: string) => 
+    invokeSafe('prompt-registry:get-prompts-by-category', { categoryId }),
+  getPromptCategories: () => 
+    invokeSafe('prompt-registry:get-categories', {}),
+  getRecentPrompts: () => 
+    invokeSafe('prompt-registry:get-recent-prompts', {}),
+  getFavoritePrompts: () => 
+    invokeSafe('prompt-registry:get-favorite-prompts', {}),
+  addPrompt: (prompt: Prompt) => 
+    invokeSafe('prompt-registry:add-prompt', { prompt }),
+  updatePrompt: (prompt: Prompt) => 
+    invokeSafe('prompt-registry:update-prompt', { prompt }),
+  deletePrompt: (id: string) => 
+    invokeSafe('prompt-registry:delete-prompt', { id }),
+  togglePromptFavorite: (id: string) => 
+    invokeSafe('prompt-registry:toggle-favorite', { id }),
+  recordPromptUsage: (id: string) => 
+    invokeSafe('prompt-registry:record-usage', { id }),
+  importFromFabric: (options: PromptImportOptions) => 
+    invokeSafe('prompt-registry:import-from-fabric', { options }),
+  exportPrompts: (options: PromptExportOptions) => 
+    invokeSafe('prompt-registry:export-prompts', { options }),
+  createPromptBackup: () => 
+    invokeSafe('prompt-registry:create-backup', {}),
+  getPromptConfig: () => 
+    invokeSafe('prompt-registry:get-config', {}),
+  updatePromptConfig: (config: Partial<PromptRegistryConfig>) => 
+    invokeSafe('prompt-registry:update-config', { config }),
+  selectImportSource: (options?: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) => 
+    invokeSafe('prompt-registry:select-import-source', options || {}),
+  selectExportTarget: (options?: { title?: string; defaultPath?: string }) => 
+    invokeSafe('prompt-registry:select-export-target', options || {}),
+
+  // Prompt Registry Events
+  onPromptAdded: (callback: (prompt: Prompt) => void) => {
+    ipcRenderer.on('prompt-registry:prompt-added', (event, data) => {
+      callback(data);
+    });
+  },
+  onPromptUpdated: (callback: (prompt: Prompt) => void) => {
+    ipcRenderer.on('prompt-registry:prompt-updated', (event, data) => {
+      callback(data);
+    });
+  },
+  onPromptRemoved: (callback: (id: string) => void) => {
+    ipcRenderer.on('prompt-registry:prompt-removed', (event, data) => {
+      callback(data);
+    });
+  },
+  onPromptImportCompleted: (callback: (result: PromptImportResult) => void) => {
+    ipcRenderer.on('prompt-registry:import-completed', (event, data) => {
+      callback(data);
+    });
+  },
+  onPromptExportCompleted: (callback: (result: PromptExportResult) => void) => {
+    ipcRenderer.on('prompt-registry:export-completed', (event, data) => {
+      callback(data);
+    });
+  },
+  removePromptEventListener: (eventType: string, callback: (...args: any[]) => void) => {
+    const channel = `prompt-registry:${eventType}`;
+    ipcRenderer.removeListener(channel, callback as any);
+  },
 };
 
 // Expose the API to the renderer process

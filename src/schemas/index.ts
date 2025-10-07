@@ -309,3 +309,6 @@ export function safeParseIPCRequest(data: unknown) {
 export function safeParseTheme(data: unknown) {
   return ThemeSchema.safeParse(data);
 }
+
+// Export prompt registry schemas and types
+export * from './prompt-registry-schemas';
