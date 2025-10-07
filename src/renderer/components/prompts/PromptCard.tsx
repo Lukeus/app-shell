@@ -119,32 +119,24 @@ export const PromptCard: React.FC<PromptCardProps> = ({
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-vscode-fg-primary truncate">
-              {prompt.name}
-            </h3>
-            {prompt.isFavorite && (
-              <span className="text-yellow-400 text-xs">⭐</span>
-            )}
+            <h3 className="text-sm font-medium text-vscode-fg-primary truncate">{prompt.name}</h3>
+            {prompt.isFavorite && <span className="text-yellow-400 text-xs">⭐</span>}
             {prompt.isBuiltIn && (
               <span className="px-1.5 py-0.5 text-xxs rounded bg-vscode-accent-blue text-white">
                 Built-in
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xxs text-vscode-fg-muted capitalize">
-              {prompt.category}
-            </span>
+            <span className="text-xxs text-vscode-fg-muted capitalize">{prompt.category}</span>
             {prompt.difficulty && (
               <span className={`text-xxs ${getDifficultyColor(prompt.difficulty)} capitalize`}>
                 {prompt.difficulty}
               </span>
             )}
             {prompt.estimatedTime && (
-              <span className="text-xxs text-vscode-fg-muted">
-                ⏱️ {prompt.estimatedTime}
-              </span>
+              <span className="text-xxs text-vscode-fg-muted">⏱️ {prompt.estimatedTime}</span>
             )}
           </div>
         </div>
@@ -158,7 +150,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             >
               {prompt.isFavorite ? '⭐' : '☆'}
             </button>
-            
+
             <button
               className="p-1 rounded text-vscode-fg-muted hover:text-vscode-fg-primary hover:bg-vscode-bg-quaternary"
               onClick={handleExecute}
@@ -166,7 +158,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             >
               ▶️
             </button>
-            
+
             <button
               className="p-1 rounded text-vscode-fg-muted hover:text-vscode-fg-primary hover:bg-vscode-bg-quaternary"
               onClick={handleEdit}
@@ -174,7 +166,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             >
               ✏️
             </button>
-            
+
             {!prompt.isBuiltIn && (
               <button
                 className="p-1 rounded text-vscode-fg-muted hover:text-red-400 hover:bg-vscode-bg-quaternary"
@@ -189,9 +181,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
       </div>
 
       {/* Description */}
-      <p className="text-xs text-vscode-fg-secondary mb-2 line-clamp-2">
-        {prompt.description}
-      </p>
+      <p className="text-xs text-vscode-fg-secondary mb-2 line-clamp-2">{prompt.description}</p>
 
       {/* Tags */}
       {prompt.tags.length > 0 && (
@@ -205,9 +195,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             </span>
           ))}
           {prompt.tags.length > 3 && (
-            <span className="text-xxs text-vscode-fg-muted">
-              +{prompt.tags.length - 3} more
-            </span>
+            <span className="text-xxs text-vscode-fg-muted">+{prompt.tags.length - 3} more</span>
           )}
         </div>
       )}
@@ -222,13 +210,9 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             {getOutputFormatIcon(prompt.outputFormat)} {prompt.outputFormat}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {prompt.usageCount > 0 && (
-            <span title="Usage count">
-              📊 {prompt.usageCount}
-            </span>
-          )}
+          {prompt.usageCount > 0 && <span title="Usage count">📊 {prompt.usageCount}</span>}
           {prompt.content.variables.length > 0 && (
             <span title={`${prompt.content.variables.length} variables`}>
               🔧 {prompt.content.variables.length}

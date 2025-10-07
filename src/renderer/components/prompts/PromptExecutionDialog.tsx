@@ -16,19 +16,14 @@ interface VariableInputProps {
   error?: string;
 }
 
-const VariableInput: React.FC<VariableInputProps> = ({
-  variable,
-  value,
-  onChange,
-  error,
-}) => {
+const VariableInput: React.FC<VariableInputProps> = ({ variable, value, onChange, error }) => {
   const renderInput = () => {
     switch (variable.type) {
       case 'multiline':
         return (
           <textarea
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={e => onChange(e.target.value)}
             placeholder={variable.description}
             className={`w-full px-3 py-2 text-sm bg-vscode-input-bg text-vscode-input-fg border rounded-md resize-y min-h-[80px] focus:outline-none focus:ring-2 focus:ring-vscode-accent-blue ${
               error ? 'border-red-500' : 'border-vscode-input-border'
@@ -36,13 +31,13 @@ const VariableInput: React.FC<VariableInputProps> = ({
             rows={4}
           />
         );
-      
+
       case 'number':
         return (
           <input
             type="number"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={e => onChange(e.target.value)}
             placeholder={variable.description}
             min={variable.validation?.min}
             max={variable.validation?.max}
@@ -51,7 +46,7 @@ const VariableInput: React.FC<VariableInputProps> = ({
             }`}
           />
         );
-      
+
       case 'boolean':
         return (
           <div className="flex items-center gap-2">
@@ -59,19 +54,19 @@ const VariableInput: React.FC<VariableInputProps> = ({
               <input
                 type="checkbox"
                 checked={value === 'true'}
-                onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+                onChange={e => onChange(e.target.checked ? 'true' : 'false')}
                 className="rounded border border-vscode-input-border bg-vscode-input-bg"
               />
               <span className="text-sm text-vscode-fg-secondary">{variable.label}</span>
             </label>
           </div>
         );
-      
+
       case 'select':
         return (
           <select
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={e => onChange(e.target.value)}
             className={`w-full px-3 py-2 text-sm bg-vscode-input-bg text-vscode-input-fg border rounded-md focus:outline-none focus:ring-2 focus:ring-vscode-accent-blue ${
               error ? 'border-red-500' : 'border-vscode-input-border'
             }`}
@@ -84,13 +79,13 @@ const VariableInput: React.FC<VariableInputProps> = ({
             ))}
           </select>
         );
-      
+
       default:
         return (
           <input
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={e => onChange(e.target.value)}
             placeholder={variable.description}
             minLength={variable.validation?.minLength}
             maxLength={variable.validation?.maxLength}
@@ -113,9 +108,7 @@ const VariableInput: React.FC<VariableInputProps> = ({
       {variable.description && variable.type !== 'boolean' && (
         <p className="mt-1 text-xs text-vscode-fg-muted">{variable.description}</p>
       )}
-      {error && (
-        <p className="mt-1 text-xs text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
 };
@@ -147,7 +140,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
       //   // Get selected text from Monaco Editor
       //   initialVariables.selectedText = getSelectedText();
       // }
-      // 
+      //
       // if (prompt.inputType === 'file' && state.editor?.activeFile) {
       //   initialVariables.activeFile = state.editor.activeFile;
       // }
@@ -286,9 +279,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
             <h2 className="text-lg font-semibold text-vscode-fg-primary">
               Execute Prompt: {prompt.name}
             </h2>
-            <p className="text-sm text-vscode-fg-muted mt-1">
-              {prompt.description}
-            </p>
+            <p className="text-sm text-vscode-fg-muted mt-1">{prompt.description}</p>
           </div>
           <button
             onClick={onClose}
@@ -303,9 +294,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Input Variables */}
             <div>
-              <h3 className="text-sm font-semibold text-vscode-fg-primary mb-3">
-                Variables
-              </h3>
+              <h3 className="text-sm font-semibold text-vscode-fg-primary mb-3">Variables</h3>
 
               {prompt.content.variables.length > 0 ? (
                 prompt.content.variables.map(variable => (
@@ -313,7 +302,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
                     key={variable.name}
                     variable={variable}
                     value={variables[variable.name] || ''}
-                    onChange={(value) => handleVariableChange(variable.name, value)}
+                    onChange={value => handleVariableChange(variable.name, value)}
                     error={errors[variable.name]}
                   />
                 ))
@@ -331,7 +320,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
                   </label>
                   <textarea
                     value={inputContent}
-                    onChange={(e) => setInputContent(e.target.value)}
+                    onChange={e => setInputContent(e.target.value)}
                     placeholder="Enter the content to process..."
                     className="w-full px-3 py-2 text-sm bg-vscode-input-bg text-vscode-input-fg border border-vscode-input-border rounded-md resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-vscode-accent-blue"
                     rows={6}
@@ -345,25 +334,21 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
 
             {/* Right: Preview */}
             <div>
-              <h3 className="text-sm font-semibold text-vscode-fg-primary mb-3">
-                Preview
-              </h3>
+              <h3 className="text-sm font-semibold text-vscode-fg-primary mb-3">Preview</h3>
               <div className="bg-vscode-bg-tertiary border border-vscode-border rounded-md p-3 text-sm">
                 <pre className="whitespace-pre-wrap text-vscode-fg-secondary font-mono text-xs leading-relaxed">
                   {previewContent || 'Preview will appear here...'}
                 </pre>
               </div>
-              
+
               {/* Prompt metadata */}
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-4 text-xs text-vscode-fg-muted">
                   <span>📝 {prompt.inputType}</span>
                   <span>📄 {prompt.outputFormat}</span>
-                  {prompt.difficulty && (
-                    <span className="capitalize">🎯 {prompt.difficulty}</span>
-                  )}
+                  {prompt.difficulty && <span className="capitalize">🎯 {prompt.difficulty}</span>}
                 </div>
-                
+
                 {prompt.estimatedTime && (
                   <div className="text-xs text-vscode-fg-muted">
                     ⏱️ Estimated time: {prompt.estimatedTime}
@@ -410,7 +395,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}

@@ -26,7 +26,7 @@ export const PromptRegistryIntegration: React.FC<PromptRegistryIntegrationProps>
   const handlePromptEdit = (prompt: Prompt) => {
     // Create a new Monaco editor tab with the prompt content
     const promptFileName = `${prompt.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}.md`;
-    
+
     // Generate markdown content for the prompt
     const frontmatter = generatePromptFrontmatter(prompt);
     const fullContent = `---\n${frontmatter}\n---\n\n${prompt.content.content}`;
@@ -100,10 +100,16 @@ export const PromptRegistryIntegration: React.FC<PromptRegistryIntegrationProps>
 
       // Create a new editor tab with the executed prompt
       const outputFileName = `${prompt.name}_output_${new Date().getTime()}.${getOutputExtension(prompt.outputFormat)}`;
-      
+
       // For now, just show the processed prompt
       // In a full implementation, this would send to an AI service
-      const outputContent = `# Prompt Execution Result\n\n**Prompt:** ${prompt.name}\n**Executed at:** ${new Date().toISOString()}\n\n## Variables Used:\n${Object.entries(variables).map(([key, value]) => `- **${key}**: ${value}`).join('\n')}\n\n${inputContent ? `## Input Content:\n${inputContent}\n\n` : ''}## Processed Prompt:\n\n${finalPrompt}\n\n---\n\n*Note: In a full implementation, this would be sent to an AI service for processing.*`;
+      const outputContent = `# Prompt Execution Result\n\n**Prompt:** ${prompt.name}\n**Executed at:** ${new Date().toISOString()}\n\n## Variables Used:\n${Object.entries(
+        variables
+      )
+        .map(([key, value]) => `- **${key}**: ${value}`)
+        .join(
+          '\n'
+        )}\n\n${inputContent ? `## Input Content:\n${inputContent}\n\n` : ''}## Processed Prompt:\n\n${finalPrompt}\n\n---\n\n*Note: In a full implementation, this would be sent to an AI service for processing.*`;
 
       dispatch({
         type: 'OPEN_FILE',
@@ -123,7 +129,6 @@ export const PromptRegistryIntegration: React.FC<PromptRegistryIntegrationProps>
 
       // Record usage
       await window.electronAPI?.recordPromptUsage?.(prompt.id);
-
     } catch (error) {
       console.error('Failed to execute prompt:', error);
       throw error;

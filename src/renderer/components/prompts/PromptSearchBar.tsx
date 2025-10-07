@@ -26,7 +26,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    
+
     debounceRef.current = setTimeout(() => {
       if (localQuery !== searchQuery.query) {
         onSearchChange({
@@ -61,7 +61,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
     const newCategories = currentCategories.includes(categoryId)
       ? currentCategories.filter(id => id !== categoryId)
       : [...currentCategories, categoryId];
-    
+
     onSearchChange({
       ...searchQuery,
       categories: newCategories.length > 0 ? newCategories : undefined,
@@ -70,10 +70,10 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
 
   const handleTagAdd = (tag: string) => {
     if (!tag.trim()) return;
-    
+
     const currentTags = searchQuery.tags || [];
     if (currentTags.includes(tag.trim())) return;
-    
+
     onSearchChange({
       ...searchQuery,
       tags: [...currentTags, tag.trim()],
@@ -83,7 +83,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
   const handleTagRemove = (tag: string) => {
     const currentTags = searchQuery.tags || [];
     const newTags = currentTags.filter(t => t !== tag);
-    
+
     onSearchChange({
       ...searchQuery,
       tags: newTags.length > 0 ? newTags : undefined,
@@ -95,7 +95,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
     const newDifficulties = currentDifficulties.includes(difficulty)
       ? currentDifficulties.filter(d => d !== difficulty)
       : [...currentDifficulties, difficulty];
-    
+
     onSearchChange({
       ...searchQuery,
       difficulty: newDifficulties.length > 0 ? newDifficulties : undefined,
@@ -145,16 +145,16 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
             ref={searchInputRef}
             type="text"
             value={localQuery}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={e => handleInputChange(e.target.value)}
             placeholder={placeholder}
             className="w-full pl-8 pr-16 py-2 text-sm bg-vscode-input-bg text-vscode-input-fg border border-vscode-input-border rounded-md focus:outline-none focus:ring-2 focus:ring-vscode-accent-blue focus:border-vscode-accent-blue"
           />
-          
+
           {/* Search icon */}
           <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2">
             <span className="text-vscode-fg-muted text-sm">🔍</span>
           </div>
-          
+
           {/* Clear button */}
           {localQuery && (
             <button
@@ -165,7 +165,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
               ✕
             </button>
           )}
-          
+
           {/* Filter toggle */}
           {showFilters && (
             <button
@@ -181,7 +181,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
             </button>
           )}
         </div>
-        
+
         {/* Active filters indicator */}
         {hasActiveFilters && (
           <div className="flex items-center gap-1 mt-1 text-xs">
@@ -281,13 +281,11 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
 
           {/* Sort options */}
           <div>
-            <label className="block text-xs font-medium text-vscode-fg-primary mb-1">
-              Sort by
-            </label>
+            <label className="block text-xs font-medium text-vscode-fg-primary mb-1">Sort by</label>
             <div className="flex gap-2">
               <select
                 value={searchQuery.sortBy || 'name'}
-                onChange={(e) => handleSortChange(e.target.value, searchQuery.sortDirection || 'asc')}
+                onChange={e => handleSortChange(e.target.value, searchQuery.sortDirection || 'asc')}
                 className="flex-1 px-2 py-1 text-xs bg-vscode-input-bg text-vscode-input-fg border border-vscode-input-border rounded"
               >
                 <option value="name">Name</option>
@@ -299,7 +297,9 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
               </select>
               <select
                 value={searchQuery.sortDirection || 'asc'}
-                onChange={(e) => handleSortChange(searchQuery.sortBy || 'name', e.target.value as 'asc' | 'desc')}
+                onChange={e =>
+                  handleSortChange(searchQuery.sortBy || 'name', e.target.value as 'asc' | 'desc')
+                }
                 className="px-2 py-1 text-xs bg-vscode-input-bg text-vscode-input-fg border border-vscode-input-border rounded"
               >
                 <option value="asc">↑ Ascending</option>
