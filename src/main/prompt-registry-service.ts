@@ -229,7 +229,8 @@ You are an expert content summarizer. You take content in and output a concise s
                 content: 'A long news article about climate change...',
                 max_points: '3',
               },
-              output: '• Climate change is accelerating faster than predicted\n• New policies are needed to meet emission targets\n• Renewable energy adoption must increase significantly',
+              output:
+                '• Climate change is accelerating faster than predicted\n• New policies are needed to meet emission targets\n• Renewable energy adoption must increase significantly',
             },
           ],
         },
@@ -316,7 +317,7 @@ Code:
         // Save to file system
         await this.savePromptToFile(fullPrompt);
         this.prompts.set(fullPrompt.id, fullPrompt);
-        
+
         // Update category count
         const category = this.categories.get(fullPrompt.category);
         if (category) {
@@ -342,7 +343,7 @@ Code:
             const prompt = await this.loadPromptFromFile(filePath);
             if (prompt) {
               this.prompts.set(prompt.id, prompt);
-              
+
               // Update category count
               const category = this.categories.get(prompt.category);
               if (category) {
@@ -363,11 +364,11 @@ Code:
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const prompt = this.parsePromptFromMarkdown(content, filePath);
-      
+
       if (this.config.enableValidation) {
         return validatePrompt(prompt);
       }
-      
+
       return prompt;
     } catch (error) {
       this.logger.error(`Failed to parse prompt from ${filePath}`, error);
@@ -379,10 +380,10 @@ Code:
     // Parse YAML frontmatter and markdown content
     const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
     const match = content.match(frontmatterRegex);
-    
+
     let metadata: any = {};
     let promptContent = content;
-    
+
     if (match) {
       try {
         // Parse YAML frontmatter (simplified - would use yaml library in production)
@@ -398,7 +399,7 @@ Code:
     const variableRegex = /\{\{(\w+)\}\}/g;
     const variables: string[] = [];
     let variableMatch;
-    
+
     while ((variableMatch = variableRegex.exec(promptContent)) !== null) {
       if (!variables.includes(variableMatch[1])) {
         variables.push(variableMatch[1]);
@@ -408,7 +409,7 @@ Code:
     // Build prompt object
     const now = new Date().toISOString();
     const promptId = metadata.id || path.basename(filePath, '.md');
-    
+
     return {
       id: promptId,
       name: metadata.name || promptId,
@@ -416,7 +417,7 @@ Code:
       instructions: metadata.instructions,
       author: metadata.author,
       version: metadata.version || '1.0.0',
-      tags: Array.isArray(metadata.tags) ? metadata.tags : (metadata.tags ? [metadata.tags] : []),
+      tags: Array.isArray(metadata.tags) ? metadata.tags : metadata.tags ? [metadata.tags] : [],
       category: metadata.category || 'general',
       inputType: metadata.inputType || 'text',
       outputFormat: metadata.outputFormat || 'text',
@@ -449,7 +450,7 @@ Code:
   private parseSimpleYaml(yamlContent: string): Record<string, any> {
     const result: Record<string, any> = {};
     const lines = yamlContent.split('\n');
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed && !trimmed.startsWith('#')) {
@@ -457,10 +458,13 @@ Code:
         if (colonIndex > 0) {
           const key = trimmed.substring(0, colonIndex).trim();
           let value: any = trimmed.substring(colonIndex + 1).trim();
-          
+
           // Handle arrays
           if (value.startsWith('[') && value.endsWith(']')) {
-            value = value.slice(1, -1).split(',').map((item: string) => item.trim().replace(/['"]/g, ''));
+            value = value
+              .slice(1, -1)
+              .split(',')
+              .map((item: string) => item.trim().replace(/['"]/g, ''));
           }
           // Handle booleans
           else if (value === 'true') value = true;
@@ -468,16 +472,18 @@ Code:
           // Handle numbers
           else if (!isNaN(Number(value))) value = Number(value);
           // Handle strings (remove quotes)
-          else if ((value.startsWith('"') && value.endsWith('"')) || 
-                   (value.startsWith("'") && value.endsWith("'"))) {
+          else if (
+            (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+          ) {
             value = value.slice(1, -1);
           }
-          
+
           result[key] = value;
         }
       }
     }
-    
+
     return result;
   }
 
@@ -485,7 +491,7 @@ Code:
     try {
       const frontmatter = this.generateYamlFrontmatter(prompt);
       const fullContent = `---\n${frontmatter}\n---\n\n${prompt.content.content}`;
-      
+
       fs.writeFileSync(prompt.filePath, fullContent, 'utf8');
     } catch (error) {
       this.logger.error(`Failed to save prompt ${prompt.id} to file`, error);
@@ -577,7 +583,7 @@ Code:
 
   async rebuildSearchIndex(): Promise<void> {
     const startTime = Date.now();
-    
+
     this.searchIndex.textIndex.clear();
     this.searchIndex.tagIndex.clear();
     this.searchIndex.categoryIndex.clear();
@@ -589,7 +595,9 @@ Code:
         prompt.description,
         prompt.instructions || '',
         prompt.content.content,
-      ].join(' ').toLowerCase();
+      ]
+        .join(' ')
+        .toLowerCase();
 
       const words = searchableText.split(/\s+/).filter(word => word.length > 2);
       for (const word of words) {
@@ -617,10 +625,10 @@ Code:
     }
 
     this.searchIndex.lastRebuild = new Date().toISOString();
-    
+
     const indexTime = Date.now() - startTime;
     this.logger.info(`Search index rebuilt in ${indexTime}ms for ${this.prompts.size} prompts`);
-    
+
     this.emit('search-index-rebuilt', undefined);
   }
 
@@ -628,7 +636,7 @@ Code:
 
   async searchPrompts(query: PromptSearchQuery): Promise<PromptSearchResult> {
     const startTime = Date.now();
-    
+
     let matchingIds = new Set<string>();
     let isFirstFilter = true;
 
@@ -653,7 +661,7 @@ Code:
         const matches = this.searchIndex.categoryIndex.get(category.toLowerCase()) || new Set();
         matches.forEach(id => categoryMatches.add(id));
       }
-      
+
       if (isFirstFilter) {
         matchingIds = categoryMatches;
         isFirstFilter = false;
@@ -669,7 +677,7 @@ Code:
         const matches = this.searchIndex.tagIndex.get(tag.toLowerCase()) || new Set();
         matches.forEach(id => tagMatches.add(id));
       }
-      
+
       if (isFirstFilter) {
         matchingIds = tagMatches;
         isFirstFilter = false;
@@ -689,8 +697,12 @@ Code:
       .filter(prompt => {
         if (query.inputType && prompt.inputType !== query.inputType) return false;
         if (query.outputFormat && prompt.outputFormat !== query.outputFormat) return false;
-        if (query.difficulty && query.difficulty.length > 0 && 
-            (!prompt.difficulty || !query.difficulty.includes(prompt.difficulty))) return false;
+        if (
+          query.difficulty &&
+          query.difficulty.length > 0 &&
+          (!prompt.difficulty || !query.difficulty.includes(prompt.difficulty))
+        )
+          return false;
         if (query.favoritesOnly && !prompt.isFavorite) return false;
         return true;
       });
@@ -698,10 +710,10 @@ Code:
     // Sort results
     const sortBy = query.sortBy || 'name';
     const sortDirection = query.sortDirection || 'asc';
-    
+
     results.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
         case 'name':
           comparison = a.name.localeCompare(b.name);
@@ -725,7 +737,7 @@ Code:
           break;
         }
       }
-      
+
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
@@ -736,7 +748,7 @@ Code:
     results = results.slice(offset, offset + limit);
 
     const searchTime = Date.now() - startTime;
-    
+
     return {
       prompts: results,
       total,
@@ -905,8 +917,10 @@ Code:
     prompt.lastUsed = new Date().toISOString();
 
     // Update recent usage
-    this.recentlyUsed = [id, ...this.recentlyUsed.filter(recentId => recentId !== id)]
-      .slice(0, this.config.maxRecentPrompts);
+    this.recentlyUsed = [id, ...this.recentlyUsed.filter(recentId => recentId !== id)].slice(
+      0,
+      this.config.maxRecentPrompts
+    );
 
     await this.saveUserData();
   }
@@ -952,8 +966,9 @@ Code:
 
           // Convert Fabric pattern to our prompt format
           const fileName = path.basename(filePath, '.md');
-          const promptId = options.targetCategory ? 
-            `${options.targetCategory}-${fileName}` : fileName;
+          const promptId = options.targetCategory
+            ? `${options.targetCategory}-${fileName}`
+            : fileName;
 
           // Check if prompt already exists
           if (this.prompts.has(promptId) && !options.overwrite) {
@@ -981,19 +996,17 @@ Code:
 
           // Apply variable mapping
           if (options.variableMapping) {
-            prompt.content.content = Object.entries(options.variableMapping)
-              .reduce((content, [oldName, newName]) => {
-                return content.replace(
-                  new RegExp(`\\{\\{${oldName}\\}\\}`, 'g'),
-                  `{{${newName}}}`
-                );
-              }, prompt.content.content);
+            prompt.content.content = Object.entries(options.variableMapping).reduce(
+              (content, [oldName, newName]) => {
+                return content.replace(new RegExp(`\\{\\{${oldName}\\}\\}`, 'g'), `{{${newName}}}`);
+              },
+              prompt.content.content
+            );
           }
 
           await this.addPrompt(prompt);
           result.imported++;
           result.importedIds.push(promptId);
-
         } catch (error) {
           result.errors.push({
             file: filePath,
@@ -1002,7 +1015,6 @@ Code:
           result.failed++;
         }
       }
-
     } catch (error) {
       result.errors.push({
         file: options.source,
@@ -1071,7 +1083,6 @@ Code:
         result.exportedFiles.push(filePath);
         result.exported++;
       }
-
     } catch (error) {
       this.logger.error('Export failed', error);
       throw error;
@@ -1113,7 +1124,8 @@ Code:
     });
 
     // Clean up old backups
-    const backups = fs.readdirSync(backupDir)
+    const backups = fs
+      .readdirSync(backupDir)
       .filter(name => name.startsWith('prompts-backup-'))
       .sort()
       .reverse();
@@ -1152,14 +1164,14 @@ Code:
 
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down Prompt Registry Service...');
-    
+
     if (this.autoBackupTimer) {
       clearInterval(this.autoBackupTimer);
     }
 
     await this.saveUserData();
     await this.saveConfig();
-    
+
     this.removeAllListeners();
     this.logger.info('Prompt Registry Service shut down successfully');
   }

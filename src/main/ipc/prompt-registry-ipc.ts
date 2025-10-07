@@ -97,10 +97,14 @@ const UpdateConfigRequestSchema = z.object({
 
 const SelectImportSourceRequestSchema = z.object({
   title: z.string().optional(),
-  filters: z.array(z.object({
-    name: z.string(),
-    extensions: z.array(z.string()),
-  })).optional(),
+  filters: z
+    .array(
+      z.object({
+        name: z.string(),
+        extensions: z.array(z.string()),
+      })
+    )
+    .optional(),
 });
 
 const SelectExportTargetRequestSchema = z.object({
@@ -116,7 +120,7 @@ export class PromptRegistryIPCManager {
   constructor(promptRegistryService: PromptRegistryService) {
     this.logger = new Logger('PromptRegistryIPCManager', LogLevel.Info);
     this.promptRegistryService = promptRegistryService;
-    
+
     // Create rate limiter for prompt operations
     this.rateLimiter = new RateLimiter();
 
@@ -295,7 +299,7 @@ export class PromptRegistryIPCManager {
         };
       } catch (error) {
         this.logger.error(`Error handling ${channel}:`, error);
-        
+
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -306,23 +310,23 @@ export class PromptRegistryIPCManager {
 
   private setupEventForwarding(): void {
     // Forward service events to renderer processes
-    this.promptRegistryService.on('prompt-added', (prompt) => {
+    this.promptRegistryService.on('prompt-added', prompt => {
       this.broadcastEvent(PROMPT_REGISTRY_CHANNELS.PROMPT_ADDED, prompt);
     });
 
-    this.promptRegistryService.on('prompt-updated', (prompt) => {
+    this.promptRegistryService.on('prompt-updated', prompt => {
       this.broadcastEvent(PROMPT_REGISTRY_CHANNELS.PROMPT_UPDATED, prompt);
     });
 
-    this.promptRegistryService.on('prompt-removed', (id) => {
+    this.promptRegistryService.on('prompt-removed', id => {
       this.broadcastEvent(PROMPT_REGISTRY_CHANNELS.PROMPT_REMOVED, id);
     });
 
-    this.promptRegistryService.on('import-completed', (result) => {
+    this.promptRegistryService.on('import-completed', result => {
       this.broadcastEvent(PROMPT_REGISTRY_CHANNELS.IMPORT_COMPLETED, result);
     });
 
-    this.promptRegistryService.on('export-completed', (result) => {
+    this.promptRegistryService.on('export-completed', result => {
       this.broadcastEvent(PROMPT_REGISTRY_CHANNELS.EXPORT_COMPLETED, result);
     });
   }
@@ -338,7 +342,9 @@ export class PromptRegistryIPCManager {
 
   // Handler implementations
 
-  private async handleSearchPrompts(data: z.infer<typeof SearchPromptsRequestSchema>): Promise<any> {
+  private async handleSearchPrompts(
+    data: z.infer<typeof SearchPromptsRequestSchema>
+  ): Promise<any> {
     const query = validatePromptSearchQuery(data.query);
     return await this.promptRegistryService.searchPrompts(query);
   }
@@ -351,7 +357,9 @@ export class PromptRegistryIPCManager {
     return await this.promptRegistryService.getAllPrompts();
   }
 
-  private async handleGetPromptsByCategory(data: z.infer<typeof GetPromptsByCategoryRequestSchema>): Promise<any> {
+  private async handleGetPromptsByCategory(
+    data: z.infer<typeof GetPromptsByCategoryRequestSchema>
+  ): Promise<any> {
     return await this.promptRegistryService.getPromptsByCategory(data.categoryId);
   }
 
@@ -384,7 +392,9 @@ export class PromptRegistryIPCManager {
     return { success: true };
   }
 
-  private async handleToggleFavorite(data: z.infer<typeof ToggleFavoriteRequestSchema>): Promise<any> {
+  private async handleToggleFavorite(
+    data: z.infer<typeof ToggleFavoriteRequestSchema>
+  ): Promise<any> {
     const isFavorite = await this.promptRegistryService.toggleFavorite(data.id);
     return { isFavorite };
   }
@@ -394,12 +404,16 @@ export class PromptRegistryIPCManager {
     return { success: true };
   }
 
-  private async handleImportFromFabric(data: z.infer<typeof ImportFromFabricRequestSchema>): Promise<any> {
+  private async handleImportFromFabric(
+    data: z.infer<typeof ImportFromFabricRequestSchema>
+  ): Promise<any> {
     const options = validatePromptImportOptions(data.options);
     return await this.promptRegistryService.importFromFabric(options);
   }
 
-  private async handleExportPrompts(data: z.infer<typeof ExportPromptsRequestSchema>): Promise<any> {
+  private async handleExportPrompts(
+    data: z.infer<typeof ExportPromptsRequestSchema>
+  ): Promise<any> {
     const options = validatePromptExportOptions(data.options);
     return await this.promptRegistryService.exportPrompts(options);
   }
@@ -423,7 +437,7 @@ export class PromptRegistryIPCManager {
     event: Electron.IpcMainInvokeEvent
   ): Promise<any> {
     const { dialog } = await import('electron');
-    
+
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
       title: data.title || 'Select Import Source',
       properties: ['openFile', 'openDirectory'],
@@ -441,7 +455,7 @@ export class PromptRegistryIPCManager {
     event: Electron.IpcMainInvokeEvent
   ): Promise<any> {
     const { dialog } = await import('electron');
-    
+
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
       title: data.title || 'Select Export Target Directory',
       defaultPath: data.defaultPath,

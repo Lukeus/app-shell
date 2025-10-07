@@ -226,7 +226,7 @@ class AppShell {
     registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
     registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
     registerAppControlIPC(this.ipcManager, this.logger, this.platform);
-    
+
     // Register prompt registry IPC handlers
     this.promptRegistryIPC.registerHandlers();
   }

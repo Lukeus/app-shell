@@ -104,24 +104,24 @@ export interface Prompt extends PromptMetadata {
   content: PromptContent;
 }
 
-export type PromptInputType = 
-  | 'text'           // Plain text input
-  | 'markdown'       // Markdown formatted text
-  | 'code'           // Source code
-  | 'url'            // Web URL
-  | 'file'           // File path or content
-  | 'clipboard'      // Clipboard content
-  | 'selection'      // Selected text from editor
-  | 'none';          // No input required
+export type PromptInputType =
+  | 'text' // Plain text input
+  | 'markdown' // Markdown formatted text
+  | 'code' // Source code
+  | 'url' // Web URL
+  | 'file' // File path or content
+  | 'clipboard' // Clipboard content
+  | 'selection' // Selected text from editor
+  | 'none'; // No input required
 
 export type PromptOutputFormat =
-  | 'text'           // Plain text output
-  | 'markdown'       // Markdown formatted output
-  | 'json'           // JSON structured output
-  | 'html'           // HTML output
-  | 'code'           // Source code output
-  | 'csv'            // CSV data output
-  | 'mixed';         // Mixed format output
+  | 'text' // Plain text output
+  | 'markdown' // Markdown formatted output
+  | 'json' // JSON structured output
+  | 'html' // HTML output
+  | 'code' // Source code output
+  | 'csv' // CSV data output
+  | 'mixed'; // Mixed format output
 
 export interface PromptCategory {
   /** Category ID */

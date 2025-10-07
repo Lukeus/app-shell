@@ -145,8 +145,14 @@ interface ElectronAPI {
   createPromptBackup: () => Promise<{ backupPath: string }>;
   getPromptConfig: () => Promise<PromptRegistryConfig>;
   updatePromptConfig: (config: Partial<PromptRegistryConfig>) => Promise<void>;
-  selectImportSource: (options?: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) => Promise<Electron.OpenDialogReturnValue>;
-  selectExportTarget: (options?: { title?: string; defaultPath?: string }) => Promise<Electron.OpenDialogReturnValue>;
+  selectImportSource: (options?: {
+    title?: string;
+    filters?: Array<{ name: string; extensions: string[] }>;
+  }) => Promise<Electron.OpenDialogReturnValue>;
+  selectExportTarget: (options?: {
+    title?: string;
+    defaultPath?: string;
+  }) => Promise<Electron.OpenDialogReturnValue>;
 
   // Prompt Registry Events
   onPromptAdded?: (callback: (prompt: Prompt) => void) => void;
@@ -329,43 +335,33 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('marketplace:getInstallationStatus', { pluginId }),
 
   // Prompt Registry
-  searchPrompts: (query: PromptSearchQuery) => 
+  searchPrompts: (query: PromptSearchQuery) =>
     invokeSafe('prompt-registry:search-prompts', { query }),
-  getPrompt: (id: string) => 
-    invokeSafe('prompt-registry:get-prompt', { id }),
-  getAllPrompts: () => 
-    invokeSafe('prompt-registry:get-all-prompts', {}),
-  getPromptsByCategory: (categoryId: string) => 
+  getPrompt: (id: string) => invokeSafe('prompt-registry:get-prompt', { id }),
+  getAllPrompts: () => invokeSafe('prompt-registry:get-all-prompts', {}),
+  getPromptsByCategory: (categoryId: string) =>
     invokeSafe('prompt-registry:get-prompts-by-category', { categoryId }),
-  getPromptCategories: () => 
-    invokeSafe('prompt-registry:get-categories', {}),
-  getRecentPrompts: () => 
-    invokeSafe('prompt-registry:get-recent-prompts', {}),
-  getFavoritePrompts: () => 
-    invokeSafe('prompt-registry:get-favorite-prompts', {}),
-  addPrompt: (prompt: Prompt) => 
-    invokeSafe('prompt-registry:add-prompt', { prompt }),
-  updatePrompt: (prompt: Prompt) => 
-    invokeSafe('prompt-registry:update-prompt', { prompt }),
-  deletePrompt: (id: string) => 
-    invokeSafe('prompt-registry:delete-prompt', { id }),
-  togglePromptFavorite: (id: string) => 
-    invokeSafe('prompt-registry:toggle-favorite', { id }),
-  recordPromptUsage: (id: string) => 
-    invokeSafe('prompt-registry:record-usage', { id }),
-  importFromFabric: (options: PromptImportOptions) => 
+  getPromptCategories: () => invokeSafe('prompt-registry:get-categories', {}),
+  getRecentPrompts: () => invokeSafe('prompt-registry:get-recent-prompts', {}),
+  getFavoritePrompts: () => invokeSafe('prompt-registry:get-favorite-prompts', {}),
+  addPrompt: (prompt: Prompt) => invokeSafe('prompt-registry:add-prompt', { prompt }),
+  updatePrompt: (prompt: Prompt) => invokeSafe('prompt-registry:update-prompt', { prompt }),
+  deletePrompt: (id: string) => invokeSafe('prompt-registry:delete-prompt', { id }),
+  togglePromptFavorite: (id: string) => invokeSafe('prompt-registry:toggle-favorite', { id }),
+  recordPromptUsage: (id: string) => invokeSafe('prompt-registry:record-usage', { id }),
+  importFromFabric: (options: PromptImportOptions) =>
     invokeSafe('prompt-registry:import-from-fabric', { options }),
-  exportPrompts: (options: PromptExportOptions) => 
+  exportPrompts: (options: PromptExportOptions) =>
     invokeSafe('prompt-registry:export-prompts', { options }),
-  createPromptBackup: () => 
-    invokeSafe('prompt-registry:create-backup', {}),
-  getPromptConfig: () => 
-    invokeSafe('prompt-registry:get-config', {}),
-  updatePromptConfig: (config: Partial<PromptRegistryConfig>) => 
+  createPromptBackup: () => invokeSafe('prompt-registry:create-backup', {}),
+  getPromptConfig: () => invokeSafe('prompt-registry:get-config', {}),
+  updatePromptConfig: (config: Partial<PromptRegistryConfig>) =>
     invokeSafe('prompt-registry:update-config', { config }),
-  selectImportSource: (options?: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) => 
-    invokeSafe('prompt-registry:select-import-source', options || {}),
-  selectExportTarget: (options?: { title?: string; defaultPath?: string }) => 
+  selectImportSource: (options?: {
+    title?: string;
+    filters?: Array<{ name: string; extensions: string[] }>;
+  }) => invokeSafe('prompt-registry:select-import-source', options || {}),
+  selectExportTarget: (options?: { title?: string; defaultPath?: string }) =>
     invokeSafe('prompt-registry:select-export-target', options || {}),
 
   // Prompt Registry Events

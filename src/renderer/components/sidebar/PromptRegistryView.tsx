@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Prompt, 
-  PromptCategory, 
-  PromptSearchQuery, 
+import {
+  Prompt,
+  PromptCategory,
+  PromptSearchQuery,
   PromptSearchResult,
   PromptImportResult,
-  PromptExportResult 
+  PromptExportResult,
 } from '../../../schemas';
 import { PromptCard } from '../prompts/PromptCard';
 import { PromptSearchBar } from '../prompts/PromptSearchBar';
@@ -59,7 +59,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
     };
 
     const handlePromptUpdated = (prompt: Prompt) => {
-      setPrompts(prev => prev.map(p => p.id === prompt.id ? prompt : p));
+      setPrompts(prev => prev.map(p => (p.id === prompt.id ? prompt : p)));
       if (selectedPrompt?.id === prompt.id) {
         setSelectedPrompt(prompt);
       }
@@ -101,11 +101,11 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
   }, [selectedPrompt]);
 
   const updateCategoryCount = (categoryId: string, delta: number) => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === categoryId 
-        ? { ...cat, promptCount: Math.max(0, cat.promptCount + delta) }
-        : cat
-    ));
+    setCategories(prev =>
+      prev.map(cat =>
+        cat.id === categoryId ? { ...cat, promptCount: Math.max(0, cat.promptCount + delta) } : cat
+      )
+    );
   };
 
   const loadCategories = async () => {
@@ -216,9 +216,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       const isFavorite = await window.electronAPI?.togglePromptFavorite?.(prompt.id);
       // Update local state immediately for better UX
       if (typeof isFavorite === 'boolean') {
-        setPrompts(prev => prev.map(p => 
-          p.id === prompt.id ? { ...p, isFavorite } : p
-        ));
+        setPrompts(prev => prev.map(p => (p.id === prompt.id ? { ...p, isFavorite } : p)));
         if (selectedPrompt?.id === prompt.id) {
           setSelectedPrompt({ ...selectedPrompt, isFavorite });
         }
@@ -241,7 +239,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
       if (!result?.canceled && result?.filePaths && result.filePaths.length > 0) {
         const sourcePath = result.filePaths[0];
-        
+
         const importResult = await window.electronAPI?.importFromFabric?.({
           source: sourcePath,
           targetCategory: 'fabric',
@@ -250,7 +248,9 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
         });
 
         if (importResult) {
-          alert(`Import completed: ${importResult.imported} prompts imported, ${importResult.skipped} skipped, ${importResult.failed} failed`);
+          alert(
+            `Import completed: ${importResult.imported} prompts imported, ${importResult.skipped} skipped, ${importResult.failed} failed`
+          );
         }
       }
     } catch (err) {
@@ -268,10 +268,8 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       {/* Header */}
       <div className="p-2 border-b border-vscode-border">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-vscode-fg-primary">
-            Prompt Registry
-          </h2>
-          
+          <h2 className="text-sm font-semibold text-vscode-fg-primary">Prompt Registry</h2>
+
           <div className="flex items-center gap-1">
             <button
               className="p-1 rounded text-xs text-vscode-fg-muted hover:text-vscode-fg-primary hover:bg-vscode-bg-quaternary"
@@ -354,9 +352,13 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="text-2xl mb-2">📝</div>
             <div className="text-sm text-vscode-fg-muted mb-2">
-              {activeTab === 'recent' ? 'No recent prompts' :
-               activeTab === 'favorites' ? 'No favorite prompts' :
-               searchQuery.query ? 'No prompts found' : 'No prompts available'}
+              {activeTab === 'recent'
+                ? 'No recent prompts'
+                : activeTab === 'favorites'
+                  ? 'No favorite prompts'
+                  : searchQuery.query
+                    ? 'No prompts found'
+                    : 'No prompts available'}
             </div>
             {activeTab === 'all' && !searchQuery.query && (
               <button
@@ -387,19 +389,28 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       {searchResult && searchResult.total > searchQuery.limit! && (
         <div className="p-2 border-t border-vscode-border flex items-center justify-between text-xs">
           <span className="text-vscode-fg-muted">
-            Showing {searchQuery.offset! + 1}-{Math.min(searchQuery.offset! + searchQuery.limit!, searchResult.total)} of {searchResult.total}
+            Showing {searchQuery.offset! + 1}-
+            {Math.min(searchQuery.offset! + searchQuery.limit!, searchResult.total)} of{' '}
+            {searchResult.total}
           </span>
           <div className="flex gap-1">
             <button
-              onClick={() => setSearchQuery(prev => ({ ...prev, offset: Math.max(0, prev.offset! - prev.limit!) }))}
+              onClick={() =>
+                setSearchQuery(prev => ({
+                  ...prev,
+                  offset: Math.max(0, prev.offset! - prev.limit!),
+                }))
+              }
               disabled={searchQuery.offset === 0}
               className="px-2 py-1 rounded bg-vscode-bg-quaternary text-vscode-fg-secondary hover:bg-vscode-bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ← Prev
             </button>
             <button
-              onClick={() => setSearchQuery(prev => ({ ...prev, offset: prev.offset! + prev.limit! }))}
-              disabled={(searchQuery.offset! + searchQuery.limit!) >= searchResult.total}
+              onClick={() =>
+                setSearchQuery(prev => ({ ...prev, offset: prev.offset! + prev.limit! }))
+              }
+              disabled={searchQuery.offset! + searchQuery.limit! >= searchResult.total}
               className="px-2 py-1 rounded bg-vscode-bg-quaternary text-vscode-fg-secondary hover:bg-vscode-bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next →

@@ -69,7 +69,10 @@ export const PromptMetadataSchema = z.object({
   description: z.string().min(1, 'Prompt description is required'),
   instructions: z.string().optional(),
   author: z.string().optional(),
-  version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must follow semantic versioning').default('1.0.0'),
+  version: z
+    .string()
+    .regex(/^\d+\.\d+\.\d+$/, 'Version must follow semantic versioning')
+    .default('1.0.0'),
   tags: z.array(z.string()).default([]),
   category: z.string().min(1, 'Category is required'),
   inputType: PromptInputTypeSchema.default('text'),
@@ -123,14 +126,18 @@ export const PromptExecutionSchema = z.object({
   variables: z.record(z.string(), z.string()).default({}),
   inputContent: z.string().optional(),
   executedAt: z.string().datetime(),
-  context: z.object({
-    activeFile: z.string().optional(),
-    selection: z.string().optional(),
-    cursorPosition: z.object({
-      line: z.number().min(0),
-      column: z.number().min(0),
-    }).optional(),
-  }).default({}),
+  context: z
+    .object({
+      activeFile: z.string().optional(),
+      selection: z.string().optional(),
+      cursorPosition: z
+        .object({
+          line: z.number().min(0),
+          column: z.number().min(0),
+        })
+        .optional(),
+    })
+    .default({}),
 });
 
 // Prompt Execution Result Schema
@@ -160,10 +167,12 @@ export const PromptImportResultSchema = z.object({
   skipped: z.number().min(0),
   failed: z.number().min(0),
   importedIds: z.array(z.string()),
-  errors: z.array(z.object({
-    file: z.string(),
-    error: z.string(),
-  })),
+  errors: z.array(
+    z.object({
+      file: z.string(),
+      error: z.string(),
+    })
+  ),
   importTime: z.number().min(0),
 });
 
@@ -192,11 +201,13 @@ export const PromptRegistryConfigSchema = z.object({
   autoBackupInterval: z.number().min(0).default(0), // 0 disables auto-backup
   maxBackupFiles: z.number().min(1).max(50).default(10),
   enableValidation: z.boolean().default(true),
-  defaultAISettings: z.object({
-    temperature: z.number().min(0).max(2).default(0.7),
-    maxTokens: z.number().min(1).max(100000).default(4096),
-    model: z.string().optional(),
-  }).default(() => ({ temperature: 0.7, maxTokens: 4096 })),
+  defaultAISettings: z
+    .object({
+      temperature: z.number().min(0).max(2).default(0.7),
+      maxTokens: z.number().min(1).max(100000).default(4096),
+      model: z.string().optional(),
+    })
+    .default(() => ({ temperature: 0.7, maxTokens: 4096 })),
 });
 
 // Fabric Pattern File Schema (for importing from Fabric patterns)
