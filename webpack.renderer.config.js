@@ -19,6 +19,10 @@ module.exports = {
       '@renderer': path.resolve(__dirname, 'src/renderer'),
       '@types': path.resolve(__dirname, 'src/types'),
     },
+    // Force case-insensitive filesystem compatibility
+    fallback: {
+      'globalThis': require.resolve('globalthis'),
+    },
   },
   module: {
     rules: [
@@ -82,8 +86,8 @@ module.exports = {
       ],
     }),
     new MonacoWebpackPlugin({
-      // Start with essential languages only for better performance
-      languages: ['typescript', 'javascript', 'json', 'html', 'css', 'markdown'],
+      // Minimal languages to avoid case-sensitivity issues in CI
+      languages: ['javascript', 'json', 'html', 'css', 'markdown'],
       // Enable only essential features for better performance
       features: [
         'coreCommands',
