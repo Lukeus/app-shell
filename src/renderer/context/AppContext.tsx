@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import { EditorFile } from '../components/editor/MonacoEditor';
 
 // Types
 export interface Extension {
@@ -25,6 +26,10 @@ export interface AppState {
   // Theme
   currentTheme: string;
 
+  // Editor state
+  openFiles: EditorFile[];
+  activeFilePath: string | null;
+
   // Status bar
   statusBarItems: {
     branch: string;
@@ -49,7 +54,15 @@ export type AppAction =
   | { type: 'SET_EXTENSIONS'; payload: Extension[] }
   | { type: 'SET_THEME'; payload: string }
   | { type: 'UPDATE_STATUS_BAR'; payload: Partial<AppState['statusBarItems']> }
-  | { type: 'LOAD_STATE'; payload: Partial<AppState> };
+  | { type: 'LOAD_STATE'; payload: Partial<AppState> }
+  // Editor actions
+  | { type: 'OPEN_FILE'; payload: EditorFile }
+  | { type: 'CLOSE_FILE'; payload: string }
+  | { type: 'SET_ACTIVE_FILE'; payload: string | null }
+  | { type: 'UPDATE_FILE_CONTENT'; payload: { path: string; content: string; isDirty: boolean } }
+  | { type: 'MOVE_TAB'; payload: { fromIndex: number; toIndex: number } }
+  | { type: 'SAVE_FILE'; payload: string }
+  | { type: 'SAVE_ALL_FILES' };
 
 const initialState: AppState = {
   sidebarCollapsed: false,
@@ -59,6 +72,8 @@ const initialState: AppState = {
   activePanel: 'terminal',
   extensions: [],
   currentTheme: 'builtin.dark',
+  openFiles: [],
+  activeFilePath: null,
   statusBarItems: {
     branch: 'main',
     sync: '0↓ 0↑',
@@ -113,6 +128,113 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'LOAD_STATE':
       return { ...state, ...action.payload };
+
+    // Editor actions
+    case 'OPEN_FILE': {
+      const existingFileIndex = state.openFiles.findIndex(
+        file => file.path === action.payload.path
+      );
+
+      if (existingFileIndex !== -1) {
+        // File is already open, just make it active
+        return {
+          ...state,
+          activeFilePath: action.payload.path,
+        };
+      }
+
+      // Add new file and make it active
+      return {
+        ...state,
+        openFiles: [...state.openFiles, action.payload],
+        activeFilePath: action.payload.path,
+      };
+    }
+
+    case 'CLOSE_FILE': {
+      const updatedFiles = state.openFiles.filter(file => file.path !== action.payload);
+      const wasActive = state.activeFilePath === action.payload;
+      let newActiveFilePath = state.activeFilePath;
+
+      if (wasActive && updatedFiles.length > 0) {
+        // If closing active file, switch to the last file in the list
+        newActiveFilePath = updatedFiles[updatedFiles.length - 1].path;
+      } else if (wasActive) {
+        // No files left open
+        newActiveFilePath = null;
+      }
+
+      return {
+        ...state,
+        openFiles: updatedFiles,
+        activeFilePath: newActiveFilePath,
+      };
+    }
+
+    case 'SET_ACTIVE_FILE':
+      return {
+        ...state,
+        activeFilePath: action.payload,
+      };
+
+    case 'UPDATE_FILE_CONTENT': {
+      const updatedFiles = state.openFiles.map(file => {
+        if (file.path === action.payload.path) {
+          return {
+            ...file,
+            content: action.payload.content,
+            isDirty: action.payload.isDirty,
+          };
+        }
+        return file;
+      });
+
+      return {
+        ...state,
+        openFiles: updatedFiles,
+      };
+    }
+
+    case 'MOVE_TAB': {
+      const { fromIndex, toIndex } = action.payload;
+      const updatedFiles = [...state.openFiles];
+      const [movedFile] = updatedFiles.splice(fromIndex, 1);
+      updatedFiles.splice(toIndex, 0, movedFile);
+
+      return {
+        ...state,
+        openFiles: updatedFiles,
+      };
+    }
+
+    case 'SAVE_FILE': {
+      const updatedFiles = state.openFiles.map(file => {
+        if (file.path === action.payload) {
+          return {
+            ...file,
+            isDirty: false,
+          };
+        }
+        return file;
+      });
+
+      return {
+        ...state,
+        openFiles: updatedFiles,
+      };
+    }
+
+    case 'SAVE_ALL_FILES': {
+      const updatedFiles = state.openFiles.map(file => ({
+        ...file,
+        isDirty: false,
+      }));
+
+      return {
+        ...state,
+        openFiles: updatedFiles,
+      };
+    }
 
     default:
       return state;

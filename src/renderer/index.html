@@ -8,6 +8,12 @@
       content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
     />
     <title>App Shell</title>
+    <!-- Global polyfill for Monaco Editor -->
+    <script>
+      if (typeof global === 'undefined') {
+        var global = globalThis || window || self;
+      }
+    </script>
     <style>
       * {
         margin: 0;

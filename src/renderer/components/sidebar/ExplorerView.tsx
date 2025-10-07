@@ -543,9 +543,17 @@ export const ExplorerView: React.FC = () => {
       if (item.isDirectory) {
         await handleToggleExpand(item);
       } else {
-        // Open file - for now just log, but could integrate with editor
-        console.log('Opening file:', item.path);
-        // TODO: Integrate with file opening system
+        // Open file in editor
+        try {
+          const openEditorFile = (window as any).openEditorFile;
+          if (openEditorFile) {
+            await openEditorFile(item.path);
+          } else {
+            console.warn('Editor not available for file opening');
+          }
+        } catch (error) {
+          console.error('Failed to open file in editor:', error);
+        }
       }
     },
     [handleToggleExpand]
