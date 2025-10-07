@@ -119,7 +119,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
   onClose,
   onExecute,
 }) => {
-  const { state } = useAppContext();
+
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [inputContent, setInputContent] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
