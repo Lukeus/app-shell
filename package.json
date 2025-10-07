@@ -200,5 +200,10 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "zod": "^4.1.11"
+  },
+  "pnpm": {
+    "overrides": {
+      "dompurify": ">=3.2.4"
+    }
   }
 }
