@@ -10,8 +10,9 @@
     <title>App Shell</title>
     <!-- Global polyfill for Monaco Editor -->
     <script>
+      var global;
       if (typeof global === 'undefined') {
-        var global = globalThis || window || self;
+        global = globalThis || window || self;
       }
     </script>
     <style>
