@@ -174,7 +174,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
         {hasActiveFilters && (
           <div className="flex items-center gap-1 mt-1 text-xs">
             <span className="text-vscode-fg-muted">Filters:</span>
-            {searchQuery.categories?.map(categoryId => {
+            {(searchQuery.categories || []).map(categoryId => {
               const category = categories.find(c => c.id === categoryId);
               return (
                 <span
@@ -191,7 +191,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
                 </span>
               );
             })}
-            {searchQuery.tags?.map(tag => (
+            {(searchQuery.tags || []).map(tag => (
               <span
                 key={tag}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-600 bg-opacity-20 text-green-400 rounded text-xxs"
@@ -229,7 +229,7 @@ export const PromptSearchBar: React.FC<PromptSearchBarProps> = ({
               Categories
             </label>
             <div className="flex flex-wrap gap-1">
-              {categories.map(category => (
+              {(categories || []).map(category => (
                 <button
                   key={category.id}
                   onClick={() => handleCategoryToggle(category.id)}
