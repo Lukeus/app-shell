@@ -1,6 +1,8 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -16,6 +18,10 @@ module.exports = {
       '@main': path.resolve(__dirname, 'src/main'),
       '@renderer': path.resolve(__dirname, 'src/renderer'),
       '@types': path.resolve(__dirname, 'src/types'),
+    },
+    // Force case-insensitive filesystem compatibility
+    fallback: {
+      globalThis: require.resolve('globalthis'),
     },
   },
   module: {
@@ -62,6 +68,10 @@ module.exports = {
     ],
   },
   plugins: [
+    new webpack.ProvidePlugin({
+      // Provide global for Monaco Editor
+      global: 'globalThis',
+    }),
     new HtmlWebpackPlugin({
       template: './src/renderer/index.html',
       filename: 'index.html',
@@ -73,6 +83,22 @@ module.exports = {
           to: 'assets',
           noErrorOnMissing: true,
         },
+      ],
+    }),
+    new MonacoWebpackPlugin({
+      // Minimal languages to avoid case-sensitivity issues in CI
+      languages: ['javascript', 'json', 'html', 'css', 'markdown'],
+      // Enable only essential features for better performance
+      features: [
+        'coreCommands',
+        'find',
+        'folding',
+        'format',
+        'clipboard',
+        'contextmenu',
+        'bracketMatching',
+        'wordHighlighter',
+        'wordOperations',
       ],
     }),
   ],
