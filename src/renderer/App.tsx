@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/CommandPalette';
+import { PromptRegistryIntegration } from './components/PromptRegistryIntegration';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { useCommandPalette } from './hooks/useCommandPalette';
 
@@ -91,8 +92,10 @@ const AppContent: React.FC = () => {
         {/* Activity Bar */}
         <ActivityBar />
 
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Sidebar with Prompt Registry Integration */}
+        <PromptRegistryIntegration>
+          <Sidebar />
+        </PromptRegistryIntegration>
 
         {/* Main Content Area */}
         <MainContent />

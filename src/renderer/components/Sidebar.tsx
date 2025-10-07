@@ -4,12 +4,14 @@ import { ExplorerView } from './sidebar/ExplorerView';
 import { ExtensionsView } from './sidebar/ExtensionsView';
 import { MarketplaceView } from './sidebar/MarketplaceView';
 import { SettingsView } from './sidebar/SettingsView';
+import { PromptRegistryView } from './sidebar/PromptRegistryView';
 
 const viewTitles: Record<string, string> = {
   explorer: 'Explorer',
   extensions: 'Extensions',
   marketplace: 'Marketplace',
   settings: 'Settings',
+  prompts: 'Prompt Registry',
 };
 
 export const Sidebar: React.FC = () => {
@@ -29,6 +31,8 @@ export const Sidebar: React.FC = () => {
         return <MarketplaceView />;
       case 'settings':
         return <SettingsView />;
+      case 'prompts':
+        return <PromptRegistryView />;
       default:
         return <ExtensionsView />;
     }
