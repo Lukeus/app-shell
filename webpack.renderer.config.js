@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -74,6 +75,34 @@ module.exports = {
           noErrorOnMissing: true,
         },
       ],
+    }),
+    new MonacoWebpackPlugin({
+      languages: [
+        'typescript',
+        'javascript',
+        'json',
+        'css',
+        'scss',
+        'less',
+        'html',
+        'markdown',
+        'yaml',
+        'xml',
+        'sql',
+        'python',
+        'powershell',
+        'shell',
+        'cpp',
+        'csharp',
+        'go',
+        'java',
+        'php',
+        'ruby',
+        'swift',
+        'kotlin',
+        'rust',
+      ],
+      features: ['!gotoSymbol'],
     }),
   ],
   output: {

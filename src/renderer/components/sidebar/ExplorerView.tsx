@@ -1,13 +1,96 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Editor from '@monaco-editor/react';
 import { FileItem } from '../explorer/FileTreeItem';
 import FileTreeItem from '../explorer/FileTreeItem';
 import { FileContextMenu } from '../explorer/ContextMenu';
 import { FileType } from '../../../types';
 import { formatFileSize, formatDate } from '../../utils/file-icons';
 
+const MAX_EDITOR_FILE_SIZE = 5 * 1024 * 1024; // 5MB safety limit for sidebar preview
+
+const LANGUAGE_EXTENSION_MAP: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'typescript',
+  js: 'javascript',
+  jsx: 'javascript',
+  json: 'json',
+  css: 'css',
+  scss: 'scss',
+  less: 'less',
+  html: 'html',
+  htm: 'html',
+  md: 'markdown',
+  mdx: 'markdown',
+  yml: 'yaml',
+  yaml: 'yaml',
+  xml: 'xml',
+  sql: 'sql',
+  sh: 'shell',
+  bash: 'shell',
+  ps1: 'powershell',
+  py: 'python',
+  rb: 'ruby',
+  php: 'php',
+  java: 'java',
+  kt: 'kotlin',
+  swift: 'swift',
+  go: 'go',
+  rs: 'rust',
+  cpp: 'cpp',
+  cc: 'cpp',
+  cxx: 'cpp',
+  h: 'cpp',
+  hpp: 'cpp',
+  c: 'c',
+  cs: 'csharp',
+  txt: 'plaintext',
+  log: 'plaintext',
+};
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  plaintext: 'Plain Text',
+  csharp: 'C#',
+  cpp: 'C++',
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  json: 'JSON',
+  yaml: 'YAML',
+  sql: 'SQL',
+  html: 'HTML',
+  css: 'CSS',
+  scss: 'SCSS',
+  less: 'Less',
+  markdown: 'Markdown',
+  powershell: 'PowerShell',
+};
+
+const getLanguageForFile = (fileName: string): string => {
+  const parts = fileName.split('.');
+  if (parts.length < 2) {
+    return 'plaintext';
+  }
+
+  const ext = parts.pop()?.toLowerCase() ?? '';
+  return LANGUAGE_EXTENSION_MAP[ext] || 'plaintext';
+};
+
+const formatLanguageLabel = (language: string): string =>
+  LANGUAGE_LABELS[language.toLowerCase()] ||
+  language
+    .split(/[-_]/)
+    .map(part => (part ? part[0].toUpperCase() + part.slice(1) : part))
+    .join(' ');
+
 interface FileOperationState {
   type: 'cut' | 'copy' | null;
   items: FileItem[];
+}
+
+interface OpenFileState {
+  path: string;
+  name: string;
+  language: string;
+  size: number;
 }
 
 export const ExplorerView: React.FC = () => {
@@ -43,11 +126,28 @@ export const ExplorerView: React.FC = () => {
   } | null>(null);
   const [fileOperation, setFileOperation] = useState<FileOperationState>({ type: null, items: [] });
   const containerRef = useRef<HTMLDivElement>(null);
+  const openFileRef = useRef<FileItem | null>(null);
+  const [openFile, setOpenFile] = useState<OpenFileState | null>(null);
+  const [editorContent, setEditorContent] = useState('');
+  const [editorOriginalContent, setEditorOriginalContent] = useState('');
+  const [editorError, setEditorError] = useState<string | null>(null);
+  const [editorMessage, setEditorMessage] = useState<string | null>(null);
+  const [isEditorLoading, setIsEditorLoading] = useState(false);
+  const isEditorDirty = openFile ? editorContent !== editorOriginalContent : false;
 
   // Initialize with home directory
   useEffect(() => {
     initializeExplorer();
   }, []);
+
+  useEffect(() => {
+    if (!editorMessage) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setEditorMessage(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [editorMessage]);
 
   const extractBranchNames = (branches: unknown): string[] => {
     if (!Array.isArray(branches)) {
@@ -416,6 +516,115 @@ export const ExplorerView: React.FC = () => {
     }
   };
 
+  const handleOpenFileInEditor = useCallback(
+    async (item: FileItem) => {
+      if (item.isDirectory) {
+        return;
+      }
+
+      openFileRef.current = item;
+      setSelectedItem(item);
+      setEditorMessage(null);
+      setEditorError(null);
+      setIsEditorLoading(true);
+
+      const language = getLanguageForFile(item.name);
+      setOpenFile({
+        path: item.path,
+        name: item.name,
+        language,
+        size: item.size,
+      });
+      setEditorContent('');
+      setEditorOriginalContent('');
+
+      const targetPath = item.path;
+
+      if (!window.electronAPI?.readFileText) {
+        if (openFileRef.current?.path === targetPath) {
+          setIsEditorLoading(false);
+          setEditorError('File preview is not available in this environment.');
+        }
+        return;
+      }
+
+      if (item.size > MAX_EDITOR_FILE_SIZE) {
+        if (openFileRef.current?.path === targetPath) {
+          setIsEditorLoading(false);
+          setEditorError('File is too large to preview in the sidebar.');
+        }
+        return;
+      }
+
+      try {
+        const content = await window.electronAPI.readFileText(item.path, 'utf-8');
+        if (openFileRef.current?.path === targetPath) {
+          setEditorContent(content ?? '');
+          setEditorOriginalContent(content ?? '');
+        }
+      } catch (err) {
+        console.error('Failed to open file in editor:', err);
+        if (openFileRef.current?.path === targetPath) {
+          setEditorError('Failed to open file. See console for details.');
+        }
+      } finally {
+        if (openFileRef.current?.path === targetPath) {
+          setIsEditorLoading(false);
+        }
+      }
+    },
+    []
+  );
+
+  const handleEditorChange = useCallback((value: string | undefined) => {
+    setEditorContent(value ?? '');
+    setEditorMessage(null);
+  }, []);
+
+  const handleSaveOpenFile = useCallback(async () => {
+    if (!openFile) {
+      return;
+    }
+
+    if (!window.electronAPI?.writeFileText) {
+      setEditorError('Saving is not available in this environment.');
+      return;
+    }
+
+    try {
+      await window.electronAPI.writeFileText(openFile.path, editorContent, 'utf-8');
+      setEditorOriginalContent(editorContent);
+      setEditorError(null);
+      setEditorMessage('File saved successfully.');
+    } catch (err) {
+      console.error('Failed to save file:', err);
+      setEditorMessage(null);
+      setEditorError('Failed to save file. See console for details.');
+    }
+  }, [openFile, editorContent]);
+
+  const handleRevertEditorChanges = useCallback(() => {
+    setEditorContent(editorOriginalContent);
+    setEditorMessage(null);
+    setEditorError(null);
+  }, [editorOriginalContent]);
+
+  const handleReloadOpenFile = useCallback(() => {
+    if (openFileRef.current) {
+      void handleOpenFileInEditor(openFileRef.current);
+    }
+  }, [handleOpenFileInEditor]);
+
+  const handleCloseEditor = useCallback(() => {
+    openFileRef.current = null;
+    setOpenFile(null);
+    setEditorContent('');
+    setEditorOriginalContent('');
+    setEditorError(null);
+    setEditorMessage(null);
+    setIsEditorLoading(false);
+  }, []);
+
   const statusLabel = (code: string): string => {
     switch (code) {
       case 'M':
@@ -543,12 +752,10 @@ export const ExplorerView: React.FC = () => {
       if (item.isDirectory) {
         await handleToggleExpand(item);
       } else {
-        // Open file - for now just log, but could integrate with editor
-        console.log('Opening file:', item.path);
-        // TODO: Integrate with file opening system
+        await handleOpenFileInEditor(item);
       }
     },
-    [handleToggleExpand]
+    [handleToggleExpand, handleOpenFileInEditor]
   );
 
   const handleRename = useCallback(
@@ -1037,31 +1244,128 @@ export const ExplorerView: React.FC = () => {
         </div>
       </div>
 
-      {/* File Tree */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto"
-        onContextMenu={e => handleContextMenu(e, null)}
-      >
-        {fileTree ? (
-          <FileTreeItem
-            item={fileTree as FileItem}
-            depth={0}
-            isSelected={selectedItem?.path === fileTree?.path}
-            isRenaming={renamingItem?.path === fileTree?.path}
-            showHiddenFiles={showHiddenFiles}
-            decorations={gitDecorations}
-            onSelect={handleSelectItem}
-            onToggleExpand={handleToggleExpand}
-            onContextMenu={handleContextMenu}
-            onDoubleClick={handleDoubleClick}
-            onRename={handleRename}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          />
-        ) : (
-          <div className="p-4 text-center text-vscode-fg-muted text-sm">No directory loaded</div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-y-auto"
+          style={openFile ? { flex: '1 1 55%' } : undefined}
+          onContextMenu={e => handleContextMenu(e, null)}
+        >
+          {fileTree ? (
+            <FileTreeItem
+              item={fileTree as FileItem}
+              depth={0}
+              isSelected={selectedItem?.path === fileTree?.path}
+              isRenaming={renamingItem?.path === fileTree?.path}
+              showHiddenFiles={showHiddenFiles}
+              decorations={gitDecorations}
+              onSelect={handleSelectItem}
+              onToggleExpand={handleToggleExpand}
+              onContextMenu={handleContextMenu}
+              onDoubleClick={handleDoubleClick}
+              onRename={handleRename}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            />
+          ) : (
+            <div className="p-4 text-center text-vscode-fg-muted text-sm">No directory loaded</div>
+          )}
+        </div>
+
+        {openFile && (
+          <div
+            className="border-t border-vscode-border bg-vscode-bg-tertiary flex flex-col"
+            style={{ flex: '0 0 45%', minHeight: '220px' }}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-vscode-border text-xs gap-2">
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-medium text-vscode-fg-primary truncate" title={openFile.path}>
+                    {openFile.name}
+                  </span>
+                  {isEditorDirty && <span className="text-vscode-accent-blue text-base leading-none">•</span>}
+                  <span className="text-[10px] uppercase tracking-wide text-vscode-fg-muted">
+                    {formatLanguageLabel(openFile.language)}
+                  </span>
+                </div>
+                <span className="text-[10px] text-vscode-fg-muted truncate" title={openFile.path}>
+                  {openFile.path}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleReloadOpenFile}
+                  className="text-[11px] px-2 py-1 border border-vscode-border rounded bg-vscode-input-background hover:border-vscode-accent-blue disabled:opacity-50"
+                  disabled={isEditorLoading}
+                  title="Reload file from disk"
+                >
+                  🔄
+                </button>
+                <button
+                  onClick={handleRevertEditorChanges}
+                  className="text-[11px] px-2 py-1 border border-vscode-border rounded bg-vscode-input-background hover:border-vscode-accent-blue disabled:opacity-50"
+                  disabled={!isEditorDirty}
+                  title="Revert unsaved changes"
+                >
+                  ↩️
+                </button>
+                <button
+                  onClick={handleSaveOpenFile}
+                  className="text-[11px] px-2 py-1 border border-vscode-border rounded bg-vscode-accent-blue text-white hover:border-transparent disabled:opacity-50 disabled:bg-vscode-input-background disabled:text-vscode-fg-muted"
+                  disabled={!isEditorDirty || isEditorLoading}
+                  title="Save file"
+                >
+                  💾 Save
+                </button>
+                <button
+                  onClick={handleCloseEditor}
+                  className="text-[11px] px-2 py-1 border border-vscode-border rounded bg-vscode-input-background hover:border-vscode-accent-blue"
+                  title="Close editor"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            {(editorError || editorMessage) && (
+              <div
+                className={`px-3 py-1 text-[11px] border-b border-vscode-border ${
+                  editorError ? 'text-red-400' : 'text-green-400'
+                }`}
+              >
+                {editorError ?? editorMessage}
+              </div>
+            )}
+            <div className="flex-1 relative overflow-hidden">
+              <Editor
+                key={openFile.path}
+                path={openFile.path}
+                language={openFile.language}
+                value={editorContent}
+                onChange={handleEditorChange}
+                theme="vs-dark"
+                options={{
+                  readOnly: false,
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                  fontSize: 13,
+                  scrollBeyondLastLine: false,
+                  renderWhitespace: 'selection',
+                }}
+                loading={<div className="text-xs text-vscode-fg-muted">Loading editor...</div>}
+                height="100%"
+                width="100%"
+              />
+              {isEditorLoading && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center text-xs text-vscode-fg-muted"
+                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
+                >
+                  Loading file...
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
