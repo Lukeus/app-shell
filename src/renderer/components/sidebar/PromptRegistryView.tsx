@@ -5,7 +5,6 @@ import {
   PromptSearchQuery,
   PromptSearchResult,
   PromptImportResult,
-  PromptExportResult,
 } from '../../../schemas';
 import { PromptCard } from '../prompts/PromptCard';
 import { PromptSearchBar } from '../prompts/PromptSearchBar';
