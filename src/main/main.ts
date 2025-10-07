@@ -7,6 +7,8 @@ import { IPCManager } from './ipc-manager';
 import { CommandManager } from './managers/command-manager';
 import { MarketplaceService } from './marketplace-service';
 import { FileSystemManager } from './file-system-manager';
+import PromptRegistryService from './prompt-registry-service';
+import { PromptRegistryIPCManager } from './ipc/prompt-registry-ipc';
 import { Logger } from './logger';
 import { Platform } from '../types';
 import { PathSecurity } from './ipc/path-security';
@@ -28,6 +30,8 @@ class AppShell {
   private commandManager: CommandManager;
   private marketplaceService: MarketplaceService;
   private fileSystemManager: FileSystemManager;
+  private promptRegistryService: PromptRegistryService;
+  private promptRegistryIPC: PromptRegistryIPCManager;
   private logger: Logger;
   private platform: Platform;
   private pathSecurity: PathSecurity;
@@ -48,6 +52,8 @@ class AppShell {
     this.commandManager = new CommandManager(this.logger, false); // Disable IPC - handled by modular system
     this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
     this.fileSystemManager = new FileSystemManager();
+    this.promptRegistryService = new PromptRegistryService();
+    this.promptRegistryIPC = new PromptRegistryIPCManager(this.promptRegistryService);
 
     // Initialize path security with default roots
     this.pathSecurity = new PathSecurity({
@@ -98,6 +104,9 @@ class AppShell {
       // Initialize marketplace service
       await this.marketplaceService.init();
 
+      // Initialize prompt registry service
+      await this.promptRegistryService.init();
+
       // Setup application menu
       this.setupApplicationMenu();
 
@@ -144,6 +153,9 @@ class AppShell {
 
         // Dispose of file system manager
         await this.fileSystemManager.dispose();
+
+        // Dispose of prompt registry service
+        await this.promptRegistryService.shutdown();
       } catch (error) {
         this.logger.error('Error during app shutdown', error);
       }
@@ -214,6 +226,9 @@ class AppShell {
     registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
     registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
     registerAppControlIPC(this.ipcManager, this.logger, this.platform);
+    
+    // Register prompt registry IPC handlers
+    this.promptRegistryIPC.registerHandlers();
   }
 
   private setupRendererCapabilities(): void {
