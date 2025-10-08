@@ -195,7 +195,9 @@ export const PromptCard: React.FC<PromptCardProps> = ({
             </span>
           ))}
           {(prompt.tags || []).length > 3 && (
-            <span className="text-xxs text-vscode-fg-muted">+{(prompt.tags || []).length - 3} more</span>
+            <span className="text-xxs text-vscode-fg-muted">
+              +{(prompt.tags || []).length - 3} more
+            </span>
           )}
         </div>
       )}
