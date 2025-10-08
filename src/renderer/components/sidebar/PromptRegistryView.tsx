@@ -53,12 +53,12 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
   // Set up event listeners
   useEffect(() => {
     const handlePromptAdded = (prompt: Prompt) => {
-      setPrompts(prev => [...prev, prompt]);
+      setPrompts(prev => [...(prev || []), prompt]);
       updateCategoryCount(prompt.category, 1);
     };
 
     const handlePromptUpdated = (prompt: Prompt) => {
-      setPrompts(prev => prev.map(p => (p.id === prompt.id ? prompt : p)));
+      setPrompts(prev => (prev || []).map(p => (p.id === prompt.id ? prompt : p)));
       if (selectedPrompt?.id === prompt.id) {
         setSelectedPrompt(prompt);
       }
@@ -66,11 +66,12 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
     const handlePromptRemoved = (promptId: string) => {
       setPrompts(prev => {
-        const removed = prev.find(p => p.id === promptId);
+        const safeArray = prev || [];
+        const removed = safeArray.find(p => p.id === promptId);
         if (removed) {
           updateCategoryCount(removed.category, -1);
         }
-        return prev.filter(p => p.id !== promptId);
+        return safeArray.filter(p => p.id !== promptId);
       });
       if (selectedPrompt?.id === promptId) {
         setSelectedPrompt(null);
@@ -101,7 +102,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
   const updateCategoryCount = (categoryId: string, delta: number) => {
     setCategories(prev =>
-      prev.map(cat =>
+      (prev || []).map(cat =>
         cat.id === categoryId ? { ...cat, promptCount: Math.max(0, cat.promptCount + delta) } : cat
       )
     );
@@ -109,26 +110,42 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
 
   const loadCategories = async () => {
     try {
-      const result = await window.electronAPI?.getPromptCategories?.();
-      if (result) {
+      if (!window.electronAPI?.getPromptCategories) {
+        console.warn('Prompt categories API not available');
+        setCategories([]);
+        return;
+      }
+      const result = await window.electronAPI.getPromptCategories();
+      if (result && Array.isArray(result)) {
         setCategories(result);
+      } else {
+        setCategories([]); // Ensure we have a default empty array
       }
     } catch (err) {
       console.error('Failed to load categories:', err);
       setError('Failed to load categories');
+      setCategories([]); // Set empty array on error
     }
   };
 
   const loadPrompts = async () => {
     try {
       setLoading(true);
-      const result = await window.electronAPI?.getAllPrompts?.();
-      if (result) {
+      if (!window.electronAPI?.getAllPrompts) {
+        console.warn('Get all prompts API not available');
+        setPrompts([]);
+        return;
+      }
+      const result = await window.electronAPI.getAllPrompts();
+      if (result && Array.isArray(result)) {
         setPrompts(result);
+      } else {
+        setPrompts([]); // Ensure we have a default empty array
       }
     } catch (err) {
       console.error('Failed to load prompts:', err);
       setError('Failed to load prompts');
+      setPrompts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -140,11 +157,16 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       const result = await window.electronAPI?.searchPrompts?.(searchQuery);
       if (result) {
         setSearchResult(result);
-        setPrompts(result.prompts);
+        setPrompts(result.prompts || []);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to search prompts:', err);
       setError('Failed to search prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -157,10 +179,15 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       if (result) {
         setPrompts(result);
         setSearchResult(null);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to load recent prompts:', err);
       setError('Failed to load recent prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -173,10 +200,15 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       if (result) {
         setPrompts(result);
         setSearchResult(null);
+      } else {
+        setPrompts([]);
+        setSearchResult(null);
       }
     } catch (err) {
       console.error('Failed to load favorite prompts:', err);
       setError('Failed to load favorite prompts');
+      setPrompts([]);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -215,7 +247,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
       const isFavorite = await window.electronAPI?.togglePromptFavorite?.(prompt.id);
       // Update local state immediately for better UX
       if (typeof isFavorite === 'boolean') {
-        setPrompts(prev => prev.map(p => (p.id === prompt.id ? { ...p, isFavorite } : p)));
+        setPrompts(prev => (prev || []).map(p => (p.id === prompt.id ? { ...p, isFavorite } : p)));
         if (selectedPrompt?.id === prompt.id) {
           setSelectedPrompt({ ...selectedPrompt, isFavorite });
         }
@@ -259,7 +291,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
   };
 
   const filteredPrompts = useMemo(() => {
-    return prompts; // Already filtered by search or tab selection
+    return prompts || []; // Ensure we never return undefined
   }, [prompts]);
 
   return (
@@ -347,7 +379,7 @@ export const PromptRegistryView: React.FC<PromptRegistryViewProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="text-sm text-vscode-fg-muted">Loading prompts...</div>
           </div>
-        ) : filteredPrompts.length === 0 ? (
+        ) : !filteredPrompts || filteredPrompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="text-2xl mb-2">📝</div>
             <div className="text-sm text-vscode-fg-muted mb-2">
