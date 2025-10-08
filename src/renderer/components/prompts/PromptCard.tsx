@@ -184,9 +184,9 @@ export const PromptCard: React.FC<PromptCardProps> = ({
       <p className="text-xs text-vscode-fg-secondary mb-2 line-clamp-2">{prompt.description}</p>
 
       {/* Tags */}
-      {prompt.tags.length > 0 && (
+      {(prompt.tags || []).length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {prompt.tags.slice(0, 3).map((tag, index) => (
+          {(prompt.tags || []).slice(0, 3).map((tag, index) => (
             <span
               key={index}
               className="px-1.5 py-0.5 text-xxs rounded bg-vscode-bg-quaternary text-vscode-fg-muted border border-vscode-border"
@@ -194,8 +194,10 @@ export const PromptCard: React.FC<PromptCardProps> = ({
               {tag}
             </span>
           ))}
-          {prompt.tags.length > 3 && (
-            <span className="text-xxs text-vscode-fg-muted">+{prompt.tags.length - 3} more</span>
+          {(prompt.tags || []).length > 3 && (
+            <span className="text-xxs text-vscode-fg-muted">
+              +{(prompt.tags || []).length - 3} more
+            </span>
           )}
         </div>
       )}
@@ -213,9 +215,9 @@ export const PromptCard: React.FC<PromptCardProps> = ({
 
         <div className="flex items-center gap-2">
           {prompt.usageCount > 0 && <span title="Usage count">📊 {prompt.usageCount}</span>}
-          {prompt.content.variables.length > 0 && (
-            <span title={`${prompt.content.variables.length} variables`}>
-              🔧 {prompt.content.variables.length}
+          {(prompt.content.variables || []).length > 0 && (
+            <span title={`${(prompt.content.variables || []).length} variables`}>
+              🔧 {(prompt.content.variables || []).length}
             </span>
           )}
         </div>

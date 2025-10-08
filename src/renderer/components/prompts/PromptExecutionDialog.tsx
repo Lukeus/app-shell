@@ -129,7 +129,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       const initialVariables: Record<string, string> = {};
-      prompt.content.variables.forEach(variable => {
+      (prompt.content.variables || []).forEach(variable => {
         initialVariables[variable.name] = variable.defaultValue || '';
       });
 
@@ -198,7 +198,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
     const newErrors: Record<string, string> = {};
     let hasErrors = false;
 
-    prompt.content.variables.forEach(variable => {
+    (prompt.content.variables || []).forEach(variable => {
       const error = validateVariable(variable, variables[variable.name] || '');
       if (error) {
         newErrors[variable.name] = error;
@@ -234,7 +234,7 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
     }));
 
     // Clear error for this variable if it now validates
-    const variable = prompt.content.variables.find(v => v.name === name);
+    const variable = (prompt.content.variables || []).find(v => v.name === name);
     if (variable && errors[name]) {
       const error = validateVariable(variable, value);
       if (!error) {
@@ -295,8 +295,8 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
             <div>
               <h3 className="text-sm font-semibold text-vscode-fg-primary mb-3">Variables</h3>
 
-              {prompt.content.variables.length > 0 ? (
-                prompt.content.variables.map(variable => (
+              {(prompt.content.variables || []).length > 0 ? (
+                (prompt.content.variables || []).map(variable => (
                   <VariableInput
                     key={variable.name}
                     variable={variable}
@@ -354,13 +354,13 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
                   </div>
                 )}
 
-                {prompt.content.examples && prompt.content.examples.length > 0 && (
+                {(prompt.content.examples || []).length > 0 && (
                   <details className="mt-3">
                     <summary className="text-xs font-medium text-vscode-fg-primary cursor-pointer">
                       💡 Examples
                     </summary>
                     <div className="mt-2 space-y-2">
-                      {prompt.content.examples.map((example, index) => (
+                      {(prompt.content.examples || []).map((example, index) => (
                         <div key={index} className="bg-vscode-bg-quaternary p-2 rounded text-xs">
                           <div className="font-medium text-vscode-fg-primary">{example.title}</div>
                           {example.description && (
@@ -385,8 +385,8 @@ export const PromptExecutionDialog: React.FC<PromptExecutionDialogProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-vscode-border">
           <div className="flex items-center gap-2 text-xs text-vscode-fg-muted">
-            {prompt.content.variables.length > 0 && (
-              <span>🔧 {prompt.content.variables.length} variables</span>
+            {(prompt.content.variables || []).length > 0 && (
+              <span>🔧 {(prompt.content.variables || []).length} variables</span>
             )}
             {Object.keys(errors).length > 0 && (
               <span className="text-red-400">
