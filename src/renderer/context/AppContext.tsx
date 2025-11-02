@@ -15,6 +15,9 @@ export interface AppState {
   sidebarCollapsed: boolean;
   activeView: string;
 
+  // Workspace state
+  activeWorkspaceId: string;
+
   // Panel state
   panelCollapsed: boolean;
   panelHeight: number;
@@ -47,6 +50,7 @@ export type AppAction =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_SIDEBAR_COLLAPSED'; payload: boolean }
   | { type: 'SET_ACTIVE_VIEW'; payload: string }
+  | { type: 'SET_ACTIVE_WORKSPACE'; payload: string }
   | { type: 'TOGGLE_PANEL' }
   | { type: 'SET_PANEL_COLLAPSED'; payload: boolean }
   | { type: 'SET_PANEL_HEIGHT'; payload: number }
@@ -67,6 +71,7 @@ export type AppAction =
 const initialState: AppState = {
   sidebarCollapsed: false,
   activeView: 'extensions',
+  activeWorkspaceId: 'default',
   panelCollapsed: true,
   panelHeight: 300,
   activePanel: 'terminal',
@@ -100,6 +105,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         activeView: action.payload,
         // VS Code behavior: expand sidebar when switching views
         sidebarCollapsed: false,
+      };
+
+    case 'SET_ACTIVE_WORKSPACE':
+      return {
+        ...state,
+        activeWorkspaceId: action.payload,
       };
 
     case 'TOGGLE_PANEL':

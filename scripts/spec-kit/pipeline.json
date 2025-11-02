@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "name": "Spec Kit Authoring Pipeline",
+  "source": "github/spec-kit",
+  "phases": [
+    {
+      "id": "requirements_intake",
+      "name": "Requirements Intake",
+      "upstreamSequence": "scripts/requirements-intake.ps1",
+      "description": "Capture background, problem statement, constraints, and success signals from the requestor.",
+      "prompt": {
+        "template": "You are facilitating the Requirements Intake phase. Gather context, problems, constraints, and success signals as concise bullets.",
+        "requiredInputs": [
+          "feature_description",
+          "stakeholder_persona"
+        ],
+        "expectedOutputs": [
+          "requirements_summary",
+          "open_questions"
+        ]
+      }
+    },
+    {
+      "id": "acceptance_criteria",
+      "name": "Acceptance Criteria Elaboration",
+      "upstreamSequence": "scripts/acceptance-criteria.ps1",
+      "description": "Translate requirements into testable acceptance criteria and validation notes.",
+      "prompt": {
+        "template": "Produce Given/When/Then style acceptance criteria tied to each requirement and highlight validation considerations.",
+        "requiredInputs": [
+          "requirements_summary",
+          "product_risks"
+        ],
+        "expectedOutputs": [
+          "acceptance_criteria",
+          "validation_notes"
+        ]
+      }
+    },
+    {
+      "id": "solution_outline",
+      "name": "Solution Design Outline",
+      "upstreamSequence": "scripts/solution-outline.ps1",
+      "description": "Outline implementation strategies, dependencies, and decision points that satisfy the acceptance criteria.",
+      "prompt": {
+        "template": "Map acceptance criteria to implementation workstreams and capture major design decisions and checkpoints.",
+        "requiredInputs": [
+          "acceptance_criteria",
+          "architecture_context"
+        ],
+        "expectedOutputs": [
+          "solution_brief",
+          "decision_log"
+        ]
+      }
+    },
+    {
+      "id": "implementation_plan",
+      "name": "Implementation Tasking",
+      "upstreamSequence": "scripts/implementation-plan.ps1",
+      "description": "Break the solution outline into engineer-ready tasks with estimates, dependencies, and risks.",
+      "prompt": {
+        "template": "Generate a structured task backlog with owners, dependencies, and explicit completion signals.",
+        "requiredInputs": [
+          "solution_brief",
+          "decision_log"
+        ],
+        "expectedOutputs": [
+          "task_breakdown",
+          "delivery_risks"
+        ]
+      }
+    }
+  ]
+}
