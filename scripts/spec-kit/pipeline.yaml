@@ -1,0 +1,100 @@
+version: 1
+name: Spec Kit Authoring Pipeline
+source: github/spec-kit
+summary: >-
+  High level pipeline distilled from the PowerShell orchestration scripts in
+  the upstream github/spec-kit repository. Each phase mirrors a .ps1 sequence
+  and captures the conversational contract expected by the automation.
+phases:
+  - id: requirements_intake
+    name: Requirements Intake
+    upstreamSequence: scripts/requirements-intake.ps1
+    description: >-
+      Facilitate structured requirement capture from the requestor. Surfaces
+      background, problem statement, constraints, and success signals that feed
+      follow-on scoping phases.
+    prompt:
+      template: |-
+        You are assisting with the Requirements Intake phase of the Spec Kit.
+        Capture the following details from the requestor using concise bullet
+        points:
+        - Background / context
+        - Problem statement
+        - Constraints or non-goals
+        - Success signals and guardrails
+        Use the provided feature description as your starting point.
+      requiredInputs:
+        - id: feature_description
+          description: Free-form description of the capability being requested.
+        - id: stakeholder_persona
+          description: Persona or team requesting the work.
+      expectedOutputs:
+        - id: requirements_summary
+          description: Bullet list capturing context, problem, constraints, and success signals.
+        - id: open_questions
+          description: Follow-up questions to close gaps before proceeding.
+  - id: acceptance_criteria
+    name: Acceptance Criteria Elaboration
+    upstreamSequence: scripts/acceptance-criteria.ps1
+    description: >-
+      Convert the validated requirements into executable acceptance criteria.
+      Focus on testable statements that can be automated or inspected.
+    prompt:
+      template: |-
+        Transform the confirmed requirements into Given/When/Then style
+        acceptance criteria. Make sure each criterion links back to a specific
+        requirement and highlights measurable validation steps.
+      requiredInputs:
+        - id: requirements_summary
+          description: Approved summary from the Requirements Intake phase.
+        - id: product_risks
+          description: Known risks or edge cases that require coverage.
+      expectedOutputs:
+        - id: acceptance_criteria
+          description: Numbered list of executable acceptance tests.
+        - id: validation_notes
+          description: Notes about tooling, fixtures, or data needed to evaluate the criteria.
+  - id: solution_outline
+    name: Solution Design Outline
+    upstreamSequence: scripts/solution-outline.ps1
+    description: >-
+      Explore implementation strategies and surface architectural decisions,
+      trade-offs, and sequencing. This phase enables engineering planning prior
+      to work breakdown.
+    prompt:
+      template: |-
+        Draft a solution outline that maps the acceptance criteria to
+        implementation workstreams. Summarize design decisions, highlight
+        dependencies, and note any validation checkpoints.
+      requiredInputs:
+        - id: acceptance_criteria
+          description: The acceptance criteria that must be satisfied.
+        - id: architecture_context
+          description: Existing systems, services, or contracts that influence the solution.
+      expectedOutputs:
+        - id: solution_brief
+          description: Narrative outline describing the high-level approach and rationale.
+        - id: decision_log
+          description: Table capturing key decisions, owners, and follow-up items.
+  - id: implementation_plan
+    name: Implementation Tasking
+    upstreamSequence: scripts/implementation-plan.ps1
+    description: >-
+      Decompose the solution outline into engineer-ready tasks with clear
+      deliverables, estimates, and acceptance hooks. Provides direct input to
+      issue trackers or sprint boards.
+    prompt:
+      template: |-
+        Break down the solution outline into discrete engineering tasks. Each
+        task should include a short summary, required artifacts, dependencies,
+        and explicit completion signals.
+      requiredInputs:
+        - id: solution_brief
+          description: Output from the Solution Design Outline phase.
+        - id: decision_log
+          description: Decisions that might impact task sequencing.
+      expectedOutputs:
+        - id: task_breakdown
+          description: Structured list of tasks with owners, dependencies, and estimates.
+        - id: delivery_risks
+          description: Risks or blockers that might impact execution confidence.
