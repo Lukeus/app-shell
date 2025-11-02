@@ -105,6 +105,88 @@ export const MarketplaceGetStatusSchema = z.object({ pluginId: nonEmptyString })
 export const ShowOpenDialogSchema = z.object({ options: z.any() }); // Could be more specific
 export const ShowSaveDialogSchema = z.object({ options: z.any() });
 
+// Spec Kit workspaces
+export const SpecKitWorkspaceKeySchema = z.object({
+  org: nonEmptyString,
+  repo: nonEmptyString,
+  feature: nonEmptyString,
+});
+
+const SpecKitPromptMessageSchema = z
+  .object({
+    id: nonEmptyString,
+    role: z.enum(['system', 'user', 'assistant']),
+    content: z.string(),
+    createdAt: nonEmptyString,
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
+const SpecKitSpecRevisionSchema = z
+  .object({
+    id: nonEmptyString,
+    summary: z.string().optional(),
+    createdAt: nonEmptyString,
+    author: z.string().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
+const SpecKitPatchPointerSchema = z
+  .object({
+    id: nonEmptyString,
+    description: z.string().optional(),
+    path: nonEmptyString,
+    createdAt: nonEmptyString,
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
+const SpecKitWorkspaceMetadataSchema = z
+  .object({
+    promptHistory: z.array(SpecKitPromptMessageSchema),
+    specRevisions: z.array(SpecKitSpecRevisionSchema),
+    generatedPatchPointers: z.array(SpecKitPatchPointerSchema),
+  })
+  .passthrough();
+
+const SpecKitWorkspaceMetadataInputSchema = z
+  .object({
+    promptHistory: z.array(SpecKitPromptMessageSchema).optional(),
+    specRevisions: z.array(SpecKitSpecRevisionSchema).optional(),
+    generatedPatchPointers: z.array(SpecKitPatchPointerSchema).optional(),
+  })
+  .passthrough();
+
+export const SpecKitListWorkspacesSchema = z.object({});
+
+export const SpecKitCreateWorkspaceSchema = z.object({
+  key: SpecKitWorkspaceKeySchema,
+  title: z.string().optional(),
+  description: z.string().optional(),
+  metadata: SpecKitWorkspaceMetadataInputSchema.optional(),
+});
+
+export const SpecKitGetWorkspaceSchema = z.object({
+  key: SpecKitWorkspaceKeySchema,
+});
+
+export const SpecKitUpdateWorkspaceMetadataSchema = z.object({
+  key: SpecKitWorkspaceKeySchema,
+  metadata: SpecKitWorkspaceMetadataSchema,
+});
+
+export const SpecKitArchiveWorkspaceSchema = z.object({
+  key: SpecKitWorkspaceKeySchema,
+  archived: z.boolean().optional(),
+});
+
+export const SpecKitSelectWorkspaceSchema = z.object({
+  key: SpecKitWorkspaceKeySchema,
+});
+
+export const SpecKitGetCurrentWorkspaceSchema = z.object({});
+
 export type FileReadFileInput = z.infer<typeof FileReadFileSchema>;
 export type FileReadFileTextInput = z.infer<typeof FileReadFileTextSchema>;
 export type CommandExecuteInput = z.infer<typeof CommandExecuteSchema>;

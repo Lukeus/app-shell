@@ -20,6 +20,8 @@ import { registerExtensionIPC } from './ipc/extension-ipc';
 import { registerMarketplaceIPC } from './ipc/marketplace-ipc';
 import { registerAppControlIPC } from './ipc/app-control-ipc';
 import { getGlobalCapabilityEnforcer } from './ipc/capability-enforcer';
+import { SpecKitWorkspaceManager } from './spec-kit-workspace-manager';
+import { registerSpecKitIPC } from './ipc/spec-kit-ipc';
 
 class AppShell {
   private windowManager: WindowManager;
@@ -32,6 +34,7 @@ class AppShell {
   private fileSystemManager: FileSystemManager;
   private promptRegistryService: PromptRegistryService;
   private promptRegistryIPC: PromptRegistryIPCManager;
+  private specKitWorkspaceManager: SpecKitWorkspaceManager;
   private logger: Logger;
   private platform: Platform;
   private pathSecurity: PathSecurity;
@@ -54,6 +57,7 @@ class AppShell {
     this.fileSystemManager = new FileSystemManager();
     this.promptRegistryService = new PromptRegistryService();
     this.promptRegistryIPC = new PromptRegistryIPCManager(this.promptRegistryService);
+    this.specKitWorkspaceManager = new SpecKitWorkspaceManager(this.settingsManager);
 
     // Initialize path security with default roots
     this.pathSecurity = new PathSecurity({
@@ -74,6 +78,9 @@ class AppShell {
 
       // Initialize settings
       await this.settingsManager.init();
+
+      // Initialize Spec Kit workspace storage
+      await this.specKitWorkspaceManager.init();
 
       // Initialize file system manager
       await this.fileSystemManager.init();
@@ -226,6 +233,7 @@ class AppShell {
     registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
     registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
     registerAppControlIPC(this.ipcManager, this.logger, this.platform);
+    registerSpecKitIPC(this.ipcManager, this.logger, this.specKitWorkspaceManager);
 
     // Register prompt registry IPC handlers
     this.promptRegistryIPC.registerHandlers();
@@ -256,6 +264,7 @@ class AppShell {
       enforcer.grantCapability('extensions.manage', rendererContext);
       enforcer.grantCapability('extensions.install', rendererContext);
       enforcer.grantCapability('command.execute', rendererContext);
+      enforcer.grantCapability('specKit.manage', rendererContext);
 
       this.logger.info('Granted default capabilities to main renderer');
     }
