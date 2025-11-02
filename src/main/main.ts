@@ -20,6 +20,7 @@ import { registerExtensionIPC } from './ipc/extension-ipc';
 import { registerMarketplaceIPC } from './ipc/marketplace-ipc';
 import { registerAppControlIPC } from './ipc/app-control-ipc';
 import { getGlobalCapabilityEnforcer } from './ipc/capability-enforcer';
+import { SpecKitOrchestrationServer } from './orchestration/spec-kit-orchestration-server';
 
 class AppShell {
   private windowManager: WindowManager;
@@ -35,6 +36,7 @@ class AppShell {
   private logger: Logger;
   private platform: Platform;
   private pathSecurity: PathSecurity;
+  private orchestrationServer?: SpecKitOrchestrationServer;
 
   constructor() {
     this.platform = process.platform as Platform;
@@ -107,6 +109,9 @@ class AppShell {
       // Initialize prompt registry service
       await this.promptRegistryService.init();
 
+      // Initialize orchestration server
+      await this.startOrchestrationServer();
+
       // Setup application menu
       this.setupApplicationMenu();
 
@@ -156,6 +161,9 @@ class AppShell {
 
         // Dispose of prompt registry service
         await this.promptRegistryService.shutdown();
+
+        // Stop orchestration bridge
+        await this.orchestrationServer?.stop();
       } catch (error) {
         this.logger.error('Error during app shutdown', error);
       }
@@ -416,6 +424,25 @@ class AppShell {
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+  }
+
+  private async startOrchestrationServer(): Promise<void> {
+    if (this.orchestrationServer) {
+      return;
+    }
+
+    this.orchestrationServer = new SpecKitOrchestrationServer(
+      this.commandManager,
+      this.settingsManager,
+      this.fileSystemManager,
+      this.pathSecurity
+    );
+
+    try {
+      await this.orchestrationServer.start();
+    } catch (error) {
+      this.logger.error('Failed to start orchestration server', error);
+    }
   }
 }
 

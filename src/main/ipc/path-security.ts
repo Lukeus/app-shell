@@ -113,6 +113,14 @@ export class PathSecurity {
     this.config.workspaceRoots = newRoots.map(p => path.resolve(p));
     this.logger.info(`Updated workspace roots: ${this.config.workspaceRoots.join(', ')}`);
   }
+
+  public getWorkspaceRoots(): string[] {
+    return [...this.config.workspaceRoots];
+  }
+
+  public getAllowedPaths(): string[] {
+    return [...this.config.allowedPaths];
+  }
 }
 
 // Helper to filter arrays of paths (e.g., joinPath segments if needed later)
