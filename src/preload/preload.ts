@@ -15,6 +15,8 @@ import {
   PromptExportOptions,
   PromptExportResult,
   PromptRegistryConfig,
+  WorkspaceMetadata,
+  WorkspacePipelineStep,
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
 
@@ -37,6 +39,20 @@ interface PlatformInfo {
   arch: string;
   version: string;
   homedir: string;
+}
+
+interface WorkspacePipelineRunInput {
+  workspaceId: string;
+  pipelineId: string;
+  stepId?: string;
+}
+
+interface WorkspaceFileAppliedPayload {
+  workspaceId: string;
+  absolutePath: string;
+  openInEditor?: boolean;
+  openInPreview?: boolean;
+  step: WorkspacePipelineStep;
 }
 
 interface ElectronAPI {
@@ -114,6 +130,16 @@ interface ElectronAPI {
   quitApp: () => void;
   restartApp: () => void;
 
+  // Workspaces
+  getWorkspaces: () => Promise<WorkspaceMetadata[]>;
+  getActiveWorkspace: () => Promise<WorkspaceMetadata | null>;
+  setActiveWorkspace: (workspaceId: string) => Promise<WorkspaceMetadata>;
+  runWorkspacePipeline: (input: WorkspacePipelineRunInput) => Promise<{ success: boolean }>;
+  onWorkspaceContextUpdated?: (callback: (workspace: WorkspaceMetadata) => void) => void;
+  removeWorkspaceContextListener?: (callback: (workspace: WorkspaceMetadata) => void) => void;
+  onWorkspaceFileApplied?: (callback: (event: WorkspaceFileAppliedPayload) => void) => void;
+  removeWorkspaceFileAppliedListener?: (callback: (event: WorkspaceFileAppliedPayload) => void) => void;
+
   // Marketplace
   searchMarketplacePlugins: (query: unknown) => Promise<MarketplaceSearchResult>;
   getMarketplacePlugin: (pluginId: string) => Promise<MarketplacePlugin | null>;
@@ -166,6 +192,16 @@ interface ElectronAPI {
 const extensionEventListeners = new Map<
   (event: { event: string; args: unknown[] }) => void,
   (event: Electron.IpcRendererEvent, data: { event: string; args: unknown[] }) => void
+>();
+
+const workspaceContextListeners = new Map<
+  (workspace: WorkspaceMetadata) => void,
+  (event: Electron.IpcRendererEvent, workspace: WorkspaceMetadata) => void
+>();
+
+const workspaceFileAppliedListeners = new Map<
+  (event: WorkspaceFileAppliedPayload) => void,
+  (event: Electron.IpcRendererEvent, payload: WorkspaceFileAppliedPayload) => void
 >();
 
 // Helper wrapper to automatically throw on structured { error } responses
@@ -317,6 +353,47 @@ const electronAPI: ElectronAPI = {
   // App control
   quitApp: () => ipcRenderer.invoke('app:quit'),
   restartApp: () => ipcRenderer.invoke('app:restart'),
+
+  // Workspaces
+  getWorkspaces: () => invokeSafe('workspace:list', {}),
+  getActiveWorkspace: () => invokeSafe('workspace:getActive', {}),
+  setActiveWorkspace: (workspaceId: string) =>
+    invokeSafe('workspace:setActive', { workspaceId }),
+  runWorkspacePipeline: (input: WorkspacePipelineRunInput) =>
+    invokeSafe('workspace:runPipeline', input),
+  onWorkspaceContextUpdated: (callback: (workspace: WorkspaceMetadata) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: WorkspaceMetadata) => {
+      callback(data);
+    };
+    workspaceContextListeners.set(callback, listener);
+    ipcRenderer.on('workspace:context-updated', listener);
+  },
+  removeWorkspaceContextListener: (callback: (workspace: WorkspaceMetadata) => void) => {
+    const listener = workspaceContextListeners.get(callback);
+    if (listener) {
+      ipcRenderer.removeListener('workspace:context-updated', listener);
+      workspaceContextListeners.delete(callback);
+    }
+  },
+  onWorkspaceFileApplied: (callback: (event: WorkspaceFileAppliedPayload) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: WorkspaceFileAppliedPayload
+    ) => {
+      callback(data);
+    };
+    workspaceFileAppliedListeners.set(callback, listener);
+    ipcRenderer.on('workspace:file-applied', listener);
+  },
+  removeWorkspaceFileAppliedListener: (
+    callback: (event: WorkspaceFileAppliedPayload) => void
+  ) => {
+    const listener = workspaceFileAppliedListeners.get(callback);
+    if (listener) {
+      ipcRenderer.removeListener('workspace:file-applied', listener);
+      workspaceFileAppliedListeners.delete(callback);
+    }
+  },
 
   // Marketplace
   searchMarketplacePlugins: (query: unknown) => ipcRenderer.invoke('marketplace:search', query),

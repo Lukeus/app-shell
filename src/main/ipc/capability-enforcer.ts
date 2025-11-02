@@ -165,6 +165,26 @@ export const CAPABILITIES: Record<string, CapabilityDescriptor> = {
     riskLevel: 'critical',
     category: 'app',
   },
+
+  // Workspace capabilities
+  'workspace.read': {
+    name: 'workspace.read',
+    description: 'Read workspace definitions and metadata',
+    riskLevel: 'low',
+    category: 'app',
+  },
+  'workspace.manage': {
+    name: 'workspace.manage',
+    description: 'Switch active workspace and update metadata',
+    riskLevel: 'medium',
+    category: 'app',
+  },
+  'workspace.pipeline': {
+    name: 'workspace.pipeline',
+    description: 'Execute workspace pipelines that modify repository files',
+    riskLevel: 'medium',
+    category: 'filesystem',
+  },
 };
 
 /**

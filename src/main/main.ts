@@ -20,6 +20,8 @@ import { registerExtensionIPC } from './ipc/extension-ipc';
 import { registerMarketplaceIPC } from './ipc/marketplace-ipc';
 import { registerAppControlIPC } from './ipc/app-control-ipc';
 import { getGlobalCapabilityEnforcer } from './ipc/capability-enforcer';
+import { registerWorkspaceIPC } from './ipc/workspace-ipc';
+import { WorkspaceManager } from './workspace-manager';
 
 class AppShell {
   private windowManager: WindowManager;
@@ -35,6 +37,7 @@ class AppShell {
   private logger: Logger;
   private platform: Platform;
   private pathSecurity: PathSecurity;
+  private workspaceManager: WorkspaceManager;
 
   constructor() {
     this.platform = process.platform as Platform;
@@ -64,6 +67,8 @@ class AppShell {
       tempDirectory: require('os').tmpdir(),
     });
 
+    this.workspaceManager = new WorkspaceManager(this.fileSystemManager, this.pathSecurity);
+
     this.setupAppEventListeners();
     this.setupIPCHandlers();
   }
@@ -77,6 +82,9 @@ class AppShell {
 
       // Initialize file system manager
       await this.fileSystemManager.init();
+
+      // Initialize workspace manager (loads metadata and repository context)
+      await this.workspaceManager.init();
 
       // Create main window
       await this.windowManager.createMainWindow();
@@ -92,8 +100,12 @@ class AppShell {
         }
       }
 
-      // Set main window reference in extension manager for event forwarding
       const mainWindow = this.windowManager.getMainWindow();
+      if (mainWindow) {
+        this.workspaceManager.setMainWindow(mainWindow);
+      }
+
+      // Set main window reference in extension manager for event forwarding
       if (mainWindow) {
         this.extensionManager.setMainWindow(mainWindow);
       }
@@ -131,6 +143,10 @@ class AppShell {
       // On macOS, re-create a window when the dock icon is clicked
       if (BrowserWindow.getAllWindows().length === 0) {
         await this.windowManager.createMainWindow();
+        const mainWindow = this.windowManager.getMainWindow();
+        if (mainWindow) {
+          this.workspaceManager.setMainWindow(mainWindow);
+        }
       }
     });
 
@@ -156,6 +172,9 @@ class AppShell {
 
         // Dispose of prompt registry service
         await this.promptRegistryService.shutdown();
+
+        // Dispose workspace manager
+        await this.workspaceManager.dispose();
       } catch (error) {
         this.logger.error('Error during app shutdown', error);
       }
@@ -226,6 +245,7 @@ class AppShell {
     registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
     registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
     registerAppControlIPC(this.ipcManager, this.logger, this.platform);
+    registerWorkspaceIPC(this.ipcManager, this.logger, this.workspaceManager);
 
     // Register prompt registry IPC handlers
     this.promptRegistryIPC.registerHandlers();
@@ -256,6 +276,9 @@ class AppShell {
       enforcer.grantCapability('extensions.manage', rendererContext);
       enforcer.grantCapability('extensions.install', rendererContext);
       enforcer.grantCapability('command.execute', rendererContext);
+      enforcer.grantCapability('workspace.read', rendererContext);
+      enforcer.grantCapability('workspace.manage', rendererContext);
+      enforcer.grantCapability('workspace.pipeline', rendererContext);
 
       this.logger.info('Granted default capabilities to main renderer');
     }
