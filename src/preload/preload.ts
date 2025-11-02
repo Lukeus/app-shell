@@ -17,6 +17,13 @@ import {
   PromptRegistryConfig,
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
+import type {
+  ArchiveSpecKitWorkspaceInput,
+  CreateSpecKitWorkspaceInput,
+  SpecKitWorkspace,
+  SpecKitWorkspaceKey,
+  SpecKitWorkspaceMetadata,
+} from '../common/spec-kit';
 
 // Theme change event data interface
 interface ThemeChangeData {
@@ -161,6 +168,20 @@ interface ElectronAPI {
   onPromptImportCompleted?: (callback: (result: PromptImportResult) => void) => void;
   onPromptExportCompleted?: (callback: (result: PromptExportResult) => void) => void;
   removePromptEventListener?: (eventType: string, callback: (...args: any[]) => void) => void;
+
+  // Spec Kit Workspace Management
+  listSpecKitWorkspaces: () => Promise<SpecKitWorkspace[]>;
+  createSpecKitWorkspace: (input: CreateSpecKitWorkspaceInput) => Promise<SpecKitWorkspace>;
+  getSpecKitWorkspace: (key: SpecKitWorkspaceKey) => Promise<SpecKitWorkspace | null>;
+  updateSpecKitWorkspaceMetadata: (
+    key: SpecKitWorkspaceKey,
+    metadata: SpecKitWorkspaceMetadata
+  ) => Promise<SpecKitWorkspace>;
+  archiveSpecKitWorkspace: (
+    input: ArchiveSpecKitWorkspaceInput
+  ) => Promise<SpecKitWorkspace>;
+  selectSpecKitWorkspace: (key: SpecKitWorkspaceKey) => Promise<SpecKitWorkspace>;
+  getCurrentSpecKitWorkspace: () => Promise<SpecKitWorkspace | null>;
 }
 
 const extensionEventListeners = new Map<
@@ -363,6 +384,22 @@ const electronAPI: ElectronAPI = {
   }) => invokeSafe('prompt-registry:select-import-source', options || {}),
   selectExportTarget: (options?: { title?: string; defaultPath?: string }) =>
     invokeSafe('prompt-registry:select-export-target', options || {}),
+
+  // Spec Kit Workspace Management
+  listSpecKitWorkspaces: () => invokeSafe('specKit:listWorkspaces', {}),
+  createSpecKitWorkspace: (input: CreateSpecKitWorkspaceInput) =>
+    invokeSafe('specKit:createWorkspace', input),
+  getSpecKitWorkspace: (key: SpecKitWorkspaceKey) =>
+    invokeSafe('specKit:getWorkspace', { key }),
+  updateSpecKitWorkspaceMetadata: (
+    key: SpecKitWorkspaceKey,
+    metadata: SpecKitWorkspaceMetadata
+  ) => invokeSafe('specKit:updateWorkspaceMetadata', { key, metadata }),
+  archiveSpecKitWorkspace: (input: ArchiveSpecKitWorkspaceInput) =>
+    invokeSafe('specKit:archiveWorkspace', input),
+  selectSpecKitWorkspace: (key: SpecKitWorkspaceKey) =>
+    invokeSafe('specKit:selectWorkspace', { key }),
+  getCurrentSpecKitWorkspace: () => invokeSafe('specKit:getCurrentWorkspace', {}),
 
   // Prompt Registry Events
   onPromptAdded: (callback: (prompt: Prompt) => void) => {
