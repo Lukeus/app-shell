@@ -105,6 +105,16 @@ export const MarketplaceGetStatusSchema = z.object({ pluginId: nonEmptyString })
 export const ShowOpenDialogSchema = z.object({ options: z.any() }); // Could be more specific
 export const ShowSaveDialogSchema = z.object({ options: z.any() });
 
+// Workspace operations
+export const WorkspaceListSchema = z.object({});
+export const WorkspaceGetActiveSchema = z.object({});
+export const WorkspaceSetActiveSchema = z.object({ workspaceId: nonEmptyString });
+export const WorkspaceRunPipelineSchema = z.object({
+  workspaceId: nonEmptyString,
+  pipelineId: nonEmptyString,
+  stepId: z.string().optional(),
+});
+
 export type FileReadFileInput = z.infer<typeof FileReadFileSchema>;
 export type FileReadFileTextInput = z.infer<typeof FileReadFileTextSchema>;
 export type CommandExecuteInput = z.infer<typeof CommandExecuteSchema>;

@@ -437,3 +437,53 @@ export enum LogLevel {
   Warning = 2,
   Error = 3,
 }
+
+// Workspace management
+export interface WorkspaceRepositoryStatus {
+  branch: string;
+  upstream?: string;
+  ahead: number;
+  behind: number;
+  dirty: boolean;
+  changedFiles: string[];
+  lastChecked?: string;
+}
+
+export interface WorkspaceRepository {
+  path: string;
+  branch: string;
+  serviceTokens?: Record<string, string>;
+  status?: WorkspaceRepositoryStatus;
+}
+
+export type WorkspacePipelineStepType = 'applySpec' | 'applyCode';
+
+export interface WorkspacePipelineStep {
+  id: string;
+  name: string;
+  description?: string;
+  type: WorkspacePipelineStepType;
+  targetPath: string;
+  content: string;
+  encoding?: BufferEncoding;
+  applyMode?: 'overwrite' | 'append' | 'patch';
+  openInEditor?: boolean;
+  openInPreview?: boolean;
+}
+
+export interface WorkspacePipeline {
+  id: string;
+  name: string;
+  description?: string;
+  steps: WorkspacePipelineStep[];
+}
+
+export interface WorkspaceMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  rootPath: string;
+  repository?: WorkspaceRepository;
+  pipelines: WorkspacePipeline[];
+  lastActiveAt?: string;
+}

@@ -261,6 +261,54 @@ export const MarketplacePluginSchema = z.object({
   hasUpdate: z.boolean().optional(),
 });
 
+// Workspace schemas
+export const WorkspaceRepositoryStatusSchema = z.object({
+  branch: z.string(),
+  upstream: z.string().optional(),
+  ahead: z.number().int().nonnegative(),
+  behind: z.number().int().nonnegative(),
+  dirty: z.boolean(),
+  changedFiles: z.array(z.string()),
+  lastChecked: z.string().optional(),
+});
+
+export const WorkspaceRepositorySchema = z.object({
+  path: z.string(),
+  branch: z.string(),
+  serviceTokens: z.record(z.string(), z.string()).optional(),
+  status: WorkspaceRepositoryStatusSchema.optional(),
+});
+
+export const WorkspacePipelineStepSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  type: z.enum(['applySpec', 'applyCode']),
+  targetPath: z.string(),
+  content: z.string(),
+  encoding: z.string().optional(),
+  applyMode: z.enum(['overwrite', 'append', 'patch']).optional(),
+  openInEditor: z.boolean().optional(),
+  openInPreview: z.boolean().optional(),
+});
+
+export const WorkspacePipelineSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  steps: z.array(WorkspacePipelineStepSchema),
+});
+
+export const WorkspaceMetadataSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  rootPath: z.string(),
+  repository: WorkspaceRepositorySchema.optional(),
+  pipelines: z.array(WorkspacePipelineSchema).default([]),
+  lastActiveAt: z.string().optional(),
+});
+
 // Type exports from schemas
 export type ExtensionManifest = z.infer<typeof ExtensionManifestSchema>;
 export type IPCRequest = z.infer<typeof IPCRequestSchema>;
@@ -272,6 +320,11 @@ export type SettingsValue = z.infer<typeof SettingsValueSchema>;
 export type TerminalOptions = z.infer<typeof TerminalOptionsSchema>;
 export type MarketplacePlugin = z.infer<typeof MarketplacePluginSchema>;
 export type WindowState = z.infer<typeof WindowStateSchema>;
+export type WorkspaceRepositoryStatus = z.infer<typeof WorkspaceRepositoryStatusSchema>;
+export type WorkspaceRepository = z.infer<typeof WorkspaceRepositorySchema>;
+export type WorkspacePipelineStep = z.infer<typeof WorkspacePipelineStepSchema>;
+export type WorkspacePipeline = z.infer<typeof WorkspacePipelineSchema>;
+export type WorkspaceMetadata = z.infer<typeof WorkspaceMetadataSchema>;
 
 // Re-export types from types module
 export type { Extension } from '../types';
