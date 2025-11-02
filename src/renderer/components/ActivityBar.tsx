@@ -9,6 +9,7 @@ interface ActivityItem {
 
 const activityItems: ActivityItem[] = [
   { id: 'explorer', title: 'Explorer', icon: '📁' },
+  { id: 'speckit', title: 'Spec Kit', icon: '🧭' },
   { id: 'prompts', title: 'Prompt Registry', icon: '🧠' },
   { id: 'extensions', title: 'Extensions', icon: '📦' },
   { id: 'marketplace', title: 'Marketplace', icon: '🏪' },

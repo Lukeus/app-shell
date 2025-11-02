@@ -158,6 +158,8 @@ export interface MenuItem {
 }
 
 // Keybinding system
+
+export * from './spec-kit';
 export interface KeybindingContribution {
   command: string;
   key: string;

@@ -19,6 +19,8 @@ import { registerTerminalIPC } from './ipc/terminal-ipc';
 import { registerExtensionIPC } from './ipc/extension-ipc';
 import { registerMarketplaceIPC } from './ipc/marketplace-ipc';
 import { registerAppControlIPC } from './ipc/app-control-ipc';
+import { registerSpecKitIPC } from './ipc/speckit-ipc';
+import { SpecKitManager } from './spec-kit-manager';
 import { getGlobalCapabilityEnforcer } from './ipc/capability-enforcer';
 
 class AppShell {
@@ -35,6 +37,7 @@ class AppShell {
   private logger: Logger;
   private platform: Platform;
   private pathSecurity: PathSecurity;
+  private specKitManager: SpecKitManager;
 
   constructor() {
     this.platform = process.platform as Platform;
@@ -50,6 +53,7 @@ class AppShell {
     const IPCManagerClass = require('./ipc-manager').IPCManager;
     this.ipcManager = new IPCManagerClass();
     this.commandManager = new CommandManager(this.logger, false); // Disable IPC - handled by modular system
+    this.specKitManager = new SpecKitManager({ logger: new Logger('SpecKitManager') });
     this.marketplaceService = new MarketplaceService(this.extensionManager, this.settingsManager);
     this.fileSystemManager = new FileSystemManager();
     this.promptRegistryService = new PromptRegistryService();
@@ -66,6 +70,7 @@ class AppShell {
 
     this.setupAppEventListeners();
     this.setupIPCHandlers();
+    this.registerSpecKitCommands();
   }
 
   async init(): Promise<void> {
@@ -87,15 +92,16 @@ class AppShell {
       // Set main window reference in terminal manager if it's WebTerminalManager
       if (this.terminalManager instanceof WebTerminalManager) {
         const mainWindow = this.windowManager.getMainWindow();
-        if (mainWindow) {
-          this.terminalManager.setMainWindow(mainWindow);
-        }
+      if (mainWindow) {
+        this.terminalManager.setMainWindow(mainWindow);
       }
+    }
 
       // Set main window reference in extension manager for event forwarding
       const mainWindow = this.windowManager.getMainWindow();
       if (mainWindow) {
         this.extensionManager.setMainWindow(mainWindow);
+        this.specKitManager.setMainWindow(mainWindow);
       }
 
       // Initialize extensions
@@ -226,6 +232,7 @@ class AppShell {
     registerExtensionIPC(this.ipcManager, this.logger, this.extensionManager);
     registerMarketplaceIPC(this.ipcManager, this.logger, this.marketplaceService);
     registerAppControlIPC(this.ipcManager, this.logger, this.platform);
+    registerSpecKitIPC(this.ipcManager, this.logger, this.specKitManager);
 
     // Register prompt registry IPC handlers
     this.promptRegistryIPC.registerHandlers();
@@ -256,9 +263,102 @@ class AppShell {
       enforcer.grantCapability('extensions.manage', rendererContext);
       enforcer.grantCapability('extensions.install', rendererContext);
       enforcer.grantCapability('command.execute', rendererContext);
+      enforcer.grantCapability('speckit.manage', rendererContext);
 
       this.logger.info('Granted default capabilities to main renderer');
     }
+  }
+
+  private async promptWorkspaceSelection(): Promise<void> {
+    const state = this.specKitManager.getState();
+    const workspaces = state.workspaces;
+    if (!workspaces.length) {
+      this.logger.warn('No Spec Kit workspaces available for selection');
+      return;
+    }
+
+    const mainWindow = this.windowManager.getMainWindow() ?? BrowserWindow.getFocusedWindow();
+    if (!mainWindow) {
+      await this.specKitManager.switchWorkspace(workspaces[0].id);
+      return;
+    }
+
+    const buttons = workspaces.map(ws => ws.name).concat('Cancel');
+    const defaultId = Math.max(
+      workspaces.findIndex(ws => ws.id === state.activeWorkspaceId),
+      0
+    );
+
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Switch Workspace',
+      message: 'Select a workspace to activate.',
+      buttons,
+      cancelId: buttons.length - 1,
+      defaultId,
+      normalizeAccessKeys: true,
+    });
+
+    if (response >= 0 && response < workspaces.length) {
+      await this.specKitManager.switchWorkspace(workspaces[response].id);
+    }
+  }
+
+  private registerSpecKitCommands(): void {
+    this.commandManager.registerCommand(
+      {
+        command: 'speckit.switchWorkspace',
+        title: 'Spec Kit: Switch Workspace',
+        category: 'Spec Kit',
+        icon: 'workspace',
+        accelerator: 'CommandOrControl+Shift+W',
+      },
+      async () => {
+        try {
+          await this.promptWorkspaceSelection();
+        } catch (error) {
+          this.logger.error('Failed to switch workspace', error);
+        }
+      }
+    );
+
+    this.commandManager.registerCommand(
+      {
+        command: 'speckit.resumePipeline',
+        title: 'Spec Kit: Resume Pipeline',
+        category: 'Spec Kit',
+        icon: 'play',
+        accelerator: 'CommandOrControl+Alt+R',
+      },
+      async () => {
+        try {
+          const state = this.specKitManager.getState();
+          if (!state.activeWorkspaceId) {
+            throw new Error('No active workspace to resume');
+          }
+          await this.specKitManager.resumePipeline(state.activeWorkspaceId);
+        } catch (error) {
+          this.logger.error('Failed to resume pipeline', error);
+        }
+      }
+    );
+
+    this.commandManager.registerCommand(
+      {
+        command: 'speckit.saveContext',
+        title: 'Spec Kit: Save Context',
+        category: 'Spec Kit',
+        icon: 'save',
+        accelerator: 'CommandOrControl+Alt+S',
+      },
+      async () => {
+        try {
+          await this.specKitManager.saveContext();
+        } catch (error) {
+          this.logger.error('Failed to save Spec Kit context', error);
+        }
+      }
+    );
   }
 
   private getAccelerator(key: string): string {
@@ -383,6 +483,18 @@ class AppShell {
         submenu: [
           ...commandsWithShortcuts
             .filter(cmd => cmd.category === 'Theme')
+            .map(cmd => ({
+              label: cmd.title,
+              accelerator: this.getAccelerator(cmd.accelerator || ''),
+              click: () => this.commandManager.executeCommand(cmd.command),
+            })),
+        ],
+      },
+      {
+        label: 'Spec Kit',
+        submenu: [
+          ...commandsWithShortcuts
+            .filter(cmd => cmd.category === 'Spec Kit')
             .map(cmd => ({
               label: cmd.title,
               accelerator: this.getAccelerator(cmd.accelerator || ''),
