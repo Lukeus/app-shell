@@ -105,6 +105,31 @@ export const MarketplaceGetStatusSchema = z.object({ pluginId: nonEmptyString })
 export const ShowOpenDialogSchema = z.object({ options: z.any() }); // Could be more specific
 export const ShowSaveDialogSchema = z.object({ options: z.any() });
 
+// Spec Kit operations
+export const SpecKitWorkspaceSchema = z.object({
+  id: nonEmptyString,
+  name: nonEmptyString,
+  description: z.string().optional(),
+  lastModified: z.number().int(),
+  pipeline: z.object({
+    currentStep: nonEmptyString,
+    totalSteps: z.number().int().nonnegative(),
+    completedSteps: z.number().int().nonnegative(),
+    status: z.enum(['idle', 'running', 'paused', 'completed']),
+    updatedAt: z.number().int(),
+  }),
+  tags: z.array(z.string()).optional(),
+});
+
+export const SpecKitStateSchema = z.object({
+  workspaces: z.array(SpecKitWorkspaceSchema),
+  activeWorkspaceId: z.string().nullable(),
+  lastBroadcast: z.number().int(),
+});
+
+export const SpecKitSwitchWorkspaceSchema = z.object({ workspaceId: nonEmptyString });
+export const SpecKitSaveContextSchema = z.object({ workspaceId: z.string().optional() });
+
 export type FileReadFileInput = z.infer<typeof FileReadFileSchema>;
 export type FileReadFileTextInput = z.infer<typeof FileReadFileTextSchema>;
 export type CommandExecuteInput = z.infer<typeof CommandExecuteSchema>;

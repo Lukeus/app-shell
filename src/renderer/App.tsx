@@ -7,6 +7,8 @@ import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/CommandPalette';
 import { PromptRegistryIntegration } from './components/PromptRegistryIntegration';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { SpecKitProvider } from './context/SpecKitContext';
+import { ToastProvider } from './context/ToastContext';
 import { useCommandPalette } from './hooks/useCommandPalette';
 
 // Theme application logic
@@ -113,7 +115,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AppProvider>
-      <AppContent />
+      <ToastProvider>
+        <SpecKitProvider>
+          <AppContent />
+        </SpecKitProvider>
+      </ToastProvider>
     </AppProvider>
   );
 };

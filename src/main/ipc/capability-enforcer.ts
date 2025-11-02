@@ -165,6 +165,20 @@ export const CAPABILITIES: Record<string, CapabilityDescriptor> = {
     riskLevel: 'critical',
     category: 'app',
   },
+
+  // Spec Kit capabilities
+  'speckit.read': {
+    name: 'speckit.read',
+    description: 'Read Spec Kit workspace state',
+    riskLevel: 'low',
+    category: 'app',
+  },
+  'speckit.manage': {
+    name: 'speckit.manage',
+    description: 'Modify Spec Kit workspace state',
+    riskLevel: 'medium',
+    category: 'app',
+  },
 };
 
 /**

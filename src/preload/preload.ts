@@ -17,6 +17,7 @@ import {
   PromptRegistryConfig,
 } from '../schemas';
 import type { MarketplaceCategory, MarketplaceSearchResult } from '../types';
+import type { SpecKitState } from '../types/spec-kit';
 
 // Theme change event data interface
 interface ThemeChangeData {
@@ -76,6 +77,14 @@ interface ElectronAPI {
   // Command palette events
   onCommandPaletteToggle?: (callback: () => void) => void;
   removeCommandPaletteListener?: (callback: () => void) => void;
+
+  // Spec Kit
+  getSpecKitState: () => Promise<SpecKitState>;
+  switchSpecKitWorkspace: (input: { workspaceId: string }) => Promise<SpecKitState>;
+  resumeSpecKitPipeline: (input: { workspaceId: string }) => Promise<SpecKitState>;
+  saveSpecKitContext: (input?: { workspaceId?: string }) => Promise<SpecKitState>;
+  onSpecKitStateChanged?: (callback: (state: SpecKitState) => void) => void;
+  removeSpecKitStateListener?: (callback: (state: SpecKitState) => void) => void;
 
   // Extension events
   onExtensionEvent?: (callback: (event: { event: string; args: unknown[] }) => void) => void;
@@ -166,6 +175,10 @@ interface ElectronAPI {
 const extensionEventListeners = new Map<
   (event: { event: string; args: unknown[] }) => void,
   (event: Electron.IpcRendererEvent, data: { event: string; args: unknown[] }) => void
+>();
+const specKitListeners = new Map<
+  (state: SpecKitState) => void,
+  (event: Electron.IpcRendererEvent, state: SpecKitState) => void
 >();
 
 // Helper wrapper to automatically throw on structured { error } responses
@@ -334,6 +347,15 @@ const electronAPI: ElectronAPI = {
   getPluginInstallationStatus: (pluginId: string) =>
     ipcRenderer.invoke('marketplace:getInstallationStatus', { pluginId }),
 
+  // Spec Kit
+  getSpecKitState: () => invokeSafe('speckit:getState', {}),
+  switchSpecKitWorkspace: (input: { workspaceId: string }) =>
+    invokeSafe('speckit:switchWorkspace', input),
+  resumeSpecKitPipeline: (input: { workspaceId: string }) =>
+    invokeSafe('speckit:resumePipeline', input),
+  saveSpecKitContext: (input?: { workspaceId?: string }) =>
+    invokeSafe('speckit:saveContext', input ?? {}),
+
   // Prompt Registry
   searchPrompts: (query: PromptSearchQuery) =>
     invokeSafe('prompt-registry:search-prompts', { query }),
@@ -393,6 +415,20 @@ const electronAPI: ElectronAPI = {
   removePromptEventListener: (eventType: string, callback: (...args: any[]) => void) => {
     const channel = `prompt-registry:${eventType}`;
     ipcRenderer.removeListener(channel, callback as any);
+  },
+  onSpecKitStateChanged: (callback: (state: SpecKitState) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, state: SpecKitState) => {
+      callback(state);
+    };
+    specKitListeners.set(callback, listener);
+    ipcRenderer.on('speckit:state-changed', listener);
+  },
+  removeSpecKitStateListener: (callback: (state: SpecKitState) => void) => {
+    const listener = specKitListeners.get(callback);
+    if (listener) {
+      ipcRenderer.removeListener('speckit:state-changed', listener);
+      specKitListeners.delete(callback);
+    }
   },
 };
 

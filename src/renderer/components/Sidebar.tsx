@@ -5,9 +5,11 @@ import { ExtensionsView } from './sidebar/ExtensionsView';
 import { MarketplaceView } from './sidebar/MarketplaceView';
 import { SettingsView } from './sidebar/SettingsView';
 import { PromptRegistryView } from './sidebar/PromptRegistryView';
+import { SpecKitSidebar } from './SpecKitSidebar';
 
 const viewTitles: Record<string, string> = {
   explorer: 'Explorer',
+  speckit: 'Spec Kit',
   extensions: 'Extensions',
   marketplace: 'Marketplace',
   settings: 'Settings',
@@ -33,6 +35,8 @@ export const Sidebar: React.FC = () => {
         return <SettingsView />;
       case 'prompts':
         return <PromptRegistryView />;
+      case 'speckit':
+        return <SpecKitSidebar />;
       default:
         return <ExtensionsView />;
     }

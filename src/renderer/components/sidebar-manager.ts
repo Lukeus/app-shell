@@ -26,6 +26,7 @@ export class SidebarManager {
   private initializeViews(): void {
     const viewConfigs = [
       { id: 'explorer', title: 'Explorer' },
+      { id: 'speckit', title: 'Spec Kit' },
       { id: 'extensions', title: 'Extensions' },
       { id: 'marketplace', title: 'Marketplace' },
       { id: 'settings', title: 'Settings' },
